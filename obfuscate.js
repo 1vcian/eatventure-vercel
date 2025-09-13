@@ -38,7 +38,6 @@ let obfuscationOptions = {
     domainLock: ['eatventure-loot-predictor.vercel.app'],
     domainLockRedirectUrl:'https://www.eatventure-loot-predictor.vercel.app'
 };
-obfuscationOptions={}
 
 // Offusca il codice
 const obfuscationResult = JavaScriptObfuscator.obfuscate(originalCode, obfuscationOptions);
