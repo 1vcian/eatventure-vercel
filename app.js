@@ -1,87 +1,137 @@
 let lockInterval = null;
+let cardStates = {};
+let globalEggCounts = { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Ultimate: 0 };
+let authData = { isLoggedIn: false }; // Contiene lo stato dell'utente
+// NUOVA GESTIONE DELLO STATO (con debounce per non sovraccaricare il DB)
+function debounce(func, delay) {
+    let timeout;
+    return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), delay);
+    };
+}
+
+const saveStateToDB = debounce(async () => {
+    if (!authData.isLoggedIn || authData.isMember) return; // Non salvare se non loggato o se bannato
+    try {
+        const stateToSave = { cards: cardStates, eggs: globalEggCounts };
+        await fetch('/api/data/saveState', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(stateToSave)
+        });
+    } catch (error) {
+        console.error("Failed to save state:", error);
+    }
+}, 1000); // Salva 1 secondo dopo l'ultima modifica
+
+async function loadStateFromDB() {
+    if (!authData.isLoggedIn || authData.isMember) return; // Non caricare se non loggato o bannato
+    try {
+        const response = await fetch('/api/data/getState');
+        if (response.ok) {
+            const saved = await response.json();
+            if (saved.cards) cardStates = saved.cards;
+            if (saved.eggs) globalEggCounts = saved.eggs;
+        }
+    } catch (error) {
+        console.error("Failed to load state:", error);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     // Selettori per gli elementi da bloccare
-    const requiresLoginSelectors = [
-        // Chest da bloccare
+  const requiresLoginSelectors = [
         '.card[data-card-id="small"]',
         '.card[data-card-id="pet"]',
         '.card[data-card-id="clan"]',
+        '.card[data-card-id="egg_Ultimate"]',
         '.card[data-card-id^="adventure_"]',
         '.card[data-card-id^="event_"]',
-        // Bottone di ricerca globale
         '.global-search-btn'
     ];
+    const elementsToLock = document.querySelectorAll(requiresLoginSelectors.join(','));
 
-    const elementsToToggle = document.querySelectorAll(requiresLoginSelectors.join(', '));
-
-    // NUOVA FUNZIONE: Applica gli stili di blocco direttamente agli elementi
+    // Funzione per applicare lo stile di blocco (senza disabilitare i click)
     const applyLockStyles = () => {
-        elementsToToggle.forEach(el => {
+        elementsToLock.forEach(el => {
             el.style.filter = 'blur(4px)';
-            el.style.pointerEvents = 'none';
-            el.style.userSelect = 'none';
             el.style.opacity = '0.7';
         });
     };
 
-    // NUOVA FUNZIONE: Rimuove gli stili di blocco
     const removeLockStyles = () => {
-        elementsToToggle.forEach(el => {
+        elementsToLock.forEach(el => {
             el.style.filter = '';
-            el.style.pointerEvents = '';
-            el.style.userSelect = '';
             el.style.opacity = '';
         });
     };
 
-    // FUNZIONE PRINCIPALE AGGIORNATA
-    const toggleFeatures = (isLocked) => {
-        // Ferma sempre un loop precedente
-        if (lockInterval) {
-            clearInterval(lockInterval);
-            lockInterval = null;
-        }
+    // Funzione per aggiornare tutta l'UI in base allo stato di login
+    function updateUIBasedOnAuth(data) {
+        const views = {
+            loggedOut: document.getElementById('view-logged-out'),
+            loggedIn: document.getElementById('view-logged-in'),
+            banned: document.getElementById('view-banned'),
+        };
 
-        if (isLocked) {
-            applyLockStyles(); // Applica subito gli stili
-            // Avvia il loop per ri-applicare costantemente gli stili
-            lockInterval = setInterval(applyLockStyles, 100);
+        // Nascondi tutte le viste
+        Object.values(views).forEach(v => v.style.display = 'none');
+
+        if (!data.isLoggedIn) {
+            views.loggedOut.style.display = 'block';
+            applyLockStyles();
+        } else if (data.isMember) {
+            views.banned.style.display = 'block';
+            applyLockStyles();
         } else {
-            // Se l'utente è autorizzato, rimuovi gli stili una volta sola
+            views.loggedIn.style.display = 'flex';
+            document.getElementById('user-avatar').src = data.user.avatar;
+            document.getElementById('user-username').textContent = data.user.username;
             removeLockStyles();
         }
-    };
+    }
 
+    // Controlla lo stato del login all'avvio
     try {
         const response = await fetch('/api/status');
-        const data = await response.json();
+        authData = await response.json();
+        updateUIBasedOnAuth(authData);
 
-        const loggedOutView = document.getElementById('user-logged-out');
-        const loggedInView = document.getElementById('user-logged-in');
-        const toolContainer = document.getElementById('tool-container');
-        const bannedOverlay = document.getElementById('banned-user-overlay');
-
-        if (data.isLoggedIn) {
-            if (data.isMember) {
-                // Utente loggato MA membro del server bloccato
-                toolContainer.style.display = 'none';
-                bannedOverlay.style.display = 'flex'; // Mostra il messaggio di blocco
-            } else {
-                // Utente loggato e autorizzato
-                loggedOutView.style.display = 'none';
-                loggedInView.style.display = 'block';
-                toggleFeatures(false); // Sblocca tutto
-            }
-        } else {
-            // Utente non loggato
-            loggedOutView.style.display = 'block';
-            loggedInView.style.display = 'none';
-            toggleFeatures(true); // Blocca le feature premium
+        // Se l'utente è loggato e autorizzato, carica i suoi dati
+        if (authData.isLoggedIn && !authData.isMember) {
+            await loadStateFromDB();
         }
+        
+        // Renderizza le card con lo stato caricato (o vuoto)
+        document.querySelectorAll('.card[data-card-id]').forEach(card => renderCard(card.dataset.cardId));
+
     } catch (error) {
         console.error('Error checking login status:', error);
-        toggleFeatures(true); // In caso di errore, blocca tutto per sicurezza
+        updateUIBasedOnAuth({ isLoggedIn: false });
     }
+
+    // Aggiungi l'evento per il click sulle feature bloccate
+    document.getElementById('mainGrid').addEventListener('click', (event) => {
+        const card = event.target.closest('.card.chest-card');
+        if (card && card.style.filter) { // Se è applicato il blur
+             toastr.info('Accedi con Discord per usare questa funzionalità!');
+        }
+    });
+     document.querySelector('.global-search-btn').addEventListener('click', (event) => {
+        if (event.currentTarget.style.filter) {
+             toastr.info('Accedi con Discord per usare questa funzionalità!');
+        }
+    });
+
+    // Gestione del logout
+    const handleLogout = async () => {
+        await fetch('/api/auth/logout');
+        window.location.reload();
+    };
+    document.getElementById('logout-button-welcome').addEventListener('click', handleLogout);
+    document.getElementById('logout-button-banned').addEventListener('click', handleLogout);
+    
 
     
 // Game Data
@@ -233,7 +283,7 @@ const STATE_KEY = 'lootSimulatorState_v14_globalEggs';
 let cardStates = {};
 let globalEggCounts = { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Ultimate: 0 };
 let currentSearchMode = null, currentSearchCard = null, currentCalcCardId = null; 
-function saveState() { 
+function saveStateToDB() { 
     const stateToSave = {
         cards: cardStates,
         eggs: globalEggCounts
@@ -866,7 +916,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (input.tagName === 'INPUT' && input.type === 'number') {
             const rarity = input.id.split('-')[2].charAt(0).toUpperCase() + input.id.split('-')[2].slice(1);
             globalEggCounts[rarity] = parseInt(input.value, 10) || 0;
-            saveState();
+            saveStateToDB();
             updateAndDisplayEggCounters(); // Re-calculate and display immediately
         }
     });
@@ -875,7 +925,7 @@ document.addEventListener('DOMContentLoaded', () => {
         input.addEventListener('keyup', (event) => {
             const card = event.target.closest('.card'); if (!card) return;
             const cardId = card.dataset.cardId; const seedValue = parseInt(event.target.value, 10);
-            if (!isNaN(seedValue)) { if (!cardStates[cardId]) cardStates[cardId] = { initialSeed: seedValue, history: [] }; else cardStates[cardId].initialSeed = seedValue; saveState(); }
+            if (!isNaN(seedValue)) { if (!cardStates[cardId]) cardStates[cardId] = { initialSeed: seedValue, history: [] }; else cardStates[cardId].initialSeed = seedValue; saveStateToDB(); }
         });
     });
     
@@ -885,7 +935,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!cardStates[cardId]) cardStates[cardId] = { initialSeed: null, history: [] };
             if (levelInput) cardStates[cardId].level = levelInput.value;
             if (vaultInput) cardStates[cardId].vaultPercentage = vaultInput.value;
-            saveState();
+            saveStateToDB();
             renderCard(cardId); 
         };
         levelInput?.addEventListener('keyup', saveAdventureState);
@@ -903,15 +953,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (action === 'clear') {
             delete cardStates[cardId];
-            saveState();
+            saveStateToDB();
             renderCard(cardId);
             return;
         }
-        if (action === 'toggle-history') { if (cardStates[cardId]) { cardStates[cardId].isHistoryVisible = !cardStates[cardId].isHistoryVisible; saveState(); renderCard(cardId); } return; }
+        if (action === 'toggle-history') { if (cardStates[cardId]) { cardStates[cardId].isHistoryVisible = !cardStates[cardId].isHistoryVisible; saveStateToDB(); renderCard(cardId); } return; }
         if (action === 'toggle-what-if') { 
             if (cardStates[cardId]) { 
                 cardStates[cardId].isWhatIfVisible = !cardStates[cardId].isWhatIfVisible; 
-                saveState(); 
+                saveStateToDB(); 
                 renderCard(cardId); 
             } 
             return; 
@@ -940,7 +990,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 vaultPercentage = parseInt(vaultInput.value, 10) || 0;
                 if(vaultPercentage>35) { toastr["error"]("Please enter a valid vault percentage (0-35) for the search.", "Error"); return; }
             }
-            state.history.push({ type: chestType, eventType, rarity, level, vaultPercentage }); saveState(); renderCard(cardId);
+            state.history.push({ type: chestType, eventType, rarity, level, vaultPercentage }); saveStateToDB(); renderCard(cardId);
         }
     });
 

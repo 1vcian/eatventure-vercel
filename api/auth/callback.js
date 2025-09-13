@@ -37,14 +37,24 @@ export default async function handler(req, res) {
     });
     const guilds = await guildsResponse.json();
 
-    // 3. Controlla se l'utente è nel server da bloccare
+   // NUOVO: Ottieni i dati dell'utente (username e avatar)
+    const userResponse = await fetch('https://discord.com/api/users/@me', {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` },
+    });
+    const userData = await userResponse.json();
+
     const targetGuildId = process.env.TARGET_GUILD_ID;
     const isMemberOfBannedServer = guilds.some(guild => guild.id === targetGuildId);
 
-    // 4. Crea un cookie con lo stato dell'utente
+    // Salva più dati nella sessione
     const sessionData = {
         isLoggedIn: true,
         isMember: isMemberOfBannedServer,
+        user: {
+            id: userData.id,
+            username: userData.username,
+            avatar: `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.png`
+        }
     };
 
     const cookie = serialize('user_session', JSON.stringify(sessionData), {
@@ -55,8 +65,6 @@ export default async function handler(req, res) {
     });
 
     res.setHeader('Set-Cookie', cookie);
-    
-    // 5. Reindirizza alla pagina principale
     res.redirect('/');
 
   } catch (error) {

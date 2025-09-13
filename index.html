@@ -520,27 +520,29 @@
             </div>
         </div>
     </div>
-        
-<div id="auth-section" class="text-center text-white p-3 mb-4 rounded" style="background: rgba(0,0,0,0.2);">
-    <div id="user-logged-out">
-        <p class="mb-2">Per sbloccare tutte le funzionalità (tutte le chest, ricerca globale) accedi con Discord.</p>
+<div id="auth-container" class="text-center text-white p-3 mb-4 rounded" style="background: rgba(0,0,0,0.2);">
+    
+    <div id="view-logged-out">
+        <p class="mb-2">Per sbloccare tutte le chest e la ricerca globale, accedi con Discord.</p>
         <a href="/api/auth/login" class="btn btn-lg" style="background-color: #5865F2; color: white;">
             <i class="fab fa-discord me-2"></i> Accedi con Discord
         </a>
     </div>
-    <div id="user-logged-in" style="display: none;">
-        <p>Accesso effettuato! Ora hai accesso a tutte le funzionalità.</p>
+
+    <div id="view-logged-in" style="display: none;" class="d-flex align-items-center justify-content-center gap-3">
+        <img id="user-avatar" src="" alt="User Avatar" class="rounded-circle" style="width: 50px; height: 50px;">
+        <div>
+            <p class="mb-0 fw-bold">Benvenuto, <span id="user-username"></span>!</p>
+            <small>Tutte le funzionalità sono sbloccate.</small>
         </div>
-</div>
-<div id="banned-user-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 9999; color: white; text-align: center; padding: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-    <h1 class="display-3 text-danger"><i class="fas fa-ban"></i> Accesso Negato</h1>
-    <p class="lead mt-3">L'utilizzo di questo tool va contro i Termini di Servizio del server Discord di cui fai parte.</p>
-    <p>Per poter utilizzare il tool, hai due opzioni:</p>
-    <ul class="list-unstyled">
-        <li>1. Esci dal server Discord in questione e prova a fare nuovamente il login.</li>
-        <li>2. Effettua il login con un account Discord diverso che non sia membro di quel server.</li>
-    </ul>
-    <p class="mt-4 fst-italic">Questa misura è necessaria per garantire il rispetto delle regole della community.</p>
+        <button id="logout-button-welcome" class="btn btn-danger ms-3">Logout</button>
+    </div>
+
+    <div id="view-banned" style="display: none;">
+        <p class="text-warning fw-bold">Purtroppo fai parte di un server le cui TOS vietano l'uso di questo tool.</p>
+        <p class="small">Per poterlo utilizzare, crea un nuovo account Discord o esci dal server in questione.</p>
+        <button id="logout-button-banned" class="btn btn-danger mt-2">Logout</button>
+    </div>
 </div>
 
 

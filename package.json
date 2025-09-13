@@ -4,12 +4,13 @@
   "private": true,
   "dependencies": {
     "cookie": "^0.6.0",
-    "node-fetch": "^2.6.7"
+    "node-fetch": "^2.6.7",
+    "redis": "^5.8.2"
   },
   "devDependencies": {
     "javascript-obfuscator": "^4.1.0"
   },
-  "scripts": {
+"scripts": {
     "obfuscate": "node obfuscate.js",
     "build": "npm run obfuscate"
   }
