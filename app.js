@@ -148,7 +148,7 @@ const toggleFeatures = (isLocked) => {
                 // Utente loggato e autorizzato
                 loggedOutView.style.display = 'none';
                 loggedInView.style.display = 'block';
-                bannedOverlay.style.display = '';
+                bannedOverlay.style.display = 'none';
                 toggleFeatures(false); // Sblocca tutto
                        document.getElementById('lock-message').style.display = 'none';
                   document.getElementById('unlock-message').style.display = 'block';
