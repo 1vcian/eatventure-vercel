@@ -48,7 +48,8 @@ export default async function handler(req, res) {
         const tokenInfo = {
             accessToken: tokenData.access_token,
             refreshToken: tokenData.refresh_token,
-            expiresAt: Date.now() + (tokenData.expires_in * 1000)
+            expiresAt: Date.now() + (tokenData.expires_in * 1000),
+                username: userData.username // ✅ AGGIUNGI QUESTA RIGA
         };
         await kv.set(`user-tokens:${userData.id}`, tokenInfo);
         
