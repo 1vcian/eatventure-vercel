@@ -7,20 +7,33 @@ const originalCode = fs.readFileSync('app.js', 'utf8');
 // Configura le opzioni per un'offuscamento "High"
 // Queste opzioni replicano le impostazioni più forti di obfuscator.io
 const obfuscationOptions = {
-     compact: true,
-    controlFlowFlattening: false, // Disattivato per ora
+    compact: true,
+    controlFlowFlattening: true,
+    controlFlowFlatteningThreshold: 1,
     deadCodeInjection: true,
-    debugProtection: false,      // Disattivato
-    disableConsoleOutput: false, // Lasciamo la console attiva per il debug
+    deadCodeInjectionThreshold: 1,
+    debugProtection: true,
+    debugProtectionInterval: 4000,
+    disableConsoleOutput: true,
     identifierNamesGenerator: 'hexadecimal',
     log: false,
-    renameGlobals: false,        // DISATTIVATO - IL PIÙ IMPORTANTE
-    selfDefending: false,        // Disattivato per ora
+    numbersToExpressions: true,
+    renameGlobals: true,
+    selfDefending: true,
     simplify: true,
     splitStrings: true,
+    splitStringsChunkLength: 5,
     stringArray: true,
-    stringArrayEncoding: ['base64'], // base64 è più veloce di rc4
-    stringArrayThreshold: 0.75,
+    stringArrayCallsTransform: true,
+    stringArrayEncoding: ['rc4'],
+    stringArrayIndexShift: true,
+    stringArrayRotate: true,
+    stringArrayShuffle: true,
+    stringArrayWrappersCount: 5,
+    stringArrayWrappersChainedCalls: true,
+    stringArrayWrappersParametersMaxCount: 5,
+    stringArrayWrappersType: 'function',
+    transformObjectKeys: true,
     unicodeEscapeSequence: false,
     domainLock: ['eatventure-loot-predictor.vercel.app'],
     domainLockRedirectUrl:'https://www.eatventure-loot-predictor.vercel.app'
