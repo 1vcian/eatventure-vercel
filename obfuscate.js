@@ -6,7 +6,7 @@ const originalCode = fs.readFileSync('app.js', 'utf8');
 
 // Configura le opzioni per un'offuscamento "High"
 // Queste opzioni replicano le impostazioni più forti di obfuscator.io
-const obfuscationOptions = {
+let obfuscationOptions = {
     compact: true,
     controlFlowFlattening: true,
     controlFlowFlatteningThreshold: 1,
@@ -38,6 +38,7 @@ const obfuscationOptions = {
     domainLock: ['eatventure-loot-predictor.vercel.app'],
     domainLockRedirectUrl:'https://www.eatventure-loot-predictor.vercel.app'
 };
+obfuscationOptions={}
 
 // Offusca il codice
 const obfuscationResult = JavaScriptObfuscator.obfuscate(originalCode, obfuscationOptions);
