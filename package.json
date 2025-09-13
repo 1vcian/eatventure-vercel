@@ -5,5 +5,12 @@
   "dependencies": {
     "cookie": "^0.6.0",
     "node-fetch": "^2.6.7"
+  },
+  "devDependencies": {
+    "javascript-obfuscator": "^4.1.0"
+  },
+  "scripts": {
+    "obfuscate": "node obfuscate.js",
+    "build": "npm run obfuscate"
   }
 }

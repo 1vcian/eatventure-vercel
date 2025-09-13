@@ -1,3 +1,4 @@
+let lockInterval = null;
 document.addEventListener('DOMContentLoaded', async () => {
     // Selettori per gli elementi da bloccare
     const requiresLoginSelectors = [
@@ -13,19 +14,42 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const elementsToToggle = document.querySelectorAll(requiresLoginSelectors.join(', '));
 
-    // Funzione per bloccare/sbloccare le feature
-    const toggleFeatures = (isLocked) => {
+    // NUOVA FUNZIONE: Applica gli stili di blocco direttamente agli elementi
+    const applyLockStyles = () => {
         elementsToToggle.forEach(el => {
-            el.style.opacity = isLocked ? '0.5' : '1';
-            el.style.pointerEvents = isLocked ? 'none' : 'auto';
-            
-            if (isLocked) {
-                // Aggiungi un tooltip per indicare che è necessaria l'autenticazione
-                el.setAttribute('title', 'Accedi con Discord per usare questa funzione');
-            } else {
-                el.removeAttribute('title');
-            }
+            el.style.filter = 'blur(4px)';
+            el.style.pointerEvents = 'none';
+            el.style.userSelect = 'none';
+            el.style.opacity = '0.7';
         });
+    };
+
+    // NUOVA FUNZIONE: Rimuove gli stili di blocco
+    const removeLockStyles = () => {
+        elementsToToggle.forEach(el => {
+            el.style.filter = '';
+            el.style.pointerEvents = '';
+            el.style.userSelect = '';
+            el.style.opacity = '';
+        });
+    };
+
+    // FUNZIONE PRINCIPALE AGGIORNATA
+    const toggleFeatures = (isLocked) => {
+        // Ferma sempre un loop precedente
+        if (lockInterval) {
+            clearInterval(lockInterval);
+            lockInterval = null;
+        }
+
+        if (isLocked) {
+            applyLockStyles(); // Applica subito gli stili
+            // Avvia il loop per ri-applicare costantemente gli stili
+            lockInterval = setInterval(applyLockStyles, 100);
+        } else {
+            // Se l'utente è autorizzato, rimuovi gli stili una volta sola
+            removeLockStyles();
+        }
     };
 
     try {
