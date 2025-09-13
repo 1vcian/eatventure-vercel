@@ -40,6 +40,14 @@ export default async function handler(req, res) {
         return res.json({ isLoggedIn: false });
     }
 
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
+    if (!req.headers.cookie) {
+        return res.json({ isLoggedIn: false });
+    }
+
     const cookies = parse(req.headers.cookie);
     const sessionCookie = cookies.user_session;
     // This will now correctly verify the cookie
@@ -51,6 +59,10 @@ export default async function handler(req, res) {
         res.setHeader('Set-Cookie', clearedCookie);
         return res.json({ isLoggedIn: false });
     }
+
+
+  
+
 
     // --- LOGICA DI AGGIORNAMENTO FORZATO ---
     if (req.query['force-refresh'] === 'true') {
