@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
+    "@vercel/kv": "^3.0.0",
     "cookie": "^0.6.0",
     "node-fetch": "^2.6.7",
     "redis": "^5.8.2"
@@ -10,7 +11,7 @@
   "devDependencies": {
     "javascript-obfuscator": "^4.1.0"
   },
-"scripts": {
+  "scripts": {
     "obfuscate": "node obfuscate.js",
     "build": "rm -rf public && mkdir -p public && npm run obfuscate && cp index.html unity-random.js public && cp -r src public"
   }
