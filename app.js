@@ -126,40 +126,97 @@ const toggleFeatures = (isLocked) => {
     let lastActivityTime = Date.now();
     let userIsLoggedIn = false; // Una variabile per sapere se l'utente è loggato
 
-    // Funzione per aggiornare il timestamp dell'ultima attività
-    const updateUserActivity = () => {
-        lastActivityTime = Date.now();
+ let currentUserStatus = null; // Unico oggetto per memorizzare lo stato corrente dell'utente
+
+    // --- FUNZIONE RIUTILIZZABILE PER L'UI ---
+    const updateUI = (statusData) => {
+        const loggedOutView = document.getElementById('view-logged-out');
+        const loggedInView = document.getElementById('view-logged-in');
+        const bannedOverlay = document.getElementById('view-banned');
+
+        if (statusData && statusData.isLoggedIn) {
+            document.getElementById('user-username').textContent = statusData.user.username;
+            document.getElementById('user-avatar').src = statusData.user.avatar;
+
+            if (statusData.isMember) { // Utente loggato MA bannato
+                loggedOutView.style.display = 'none';
+                loggedInView.style.display = 'block';
+                bannedOverlay.style.display = 'flex';
+                toggleFeatures(true);
+                document.getElementById('lock-message').style.display = 'block';
+                document.getElementById('unlock-message').style.display = 'none';
+            } else { // Utente loggato e autorizzato
+                loggedOutView.style.display = 'none';
+                loggedInView.style.display = 'block';
+                bannedOverlay.style.display = 'none';
+                toggleFeatures(false);
+                document.getElementById('lock-message').style.display = 'none';
+                document.getElementById('unlock-message').style.display = 'block';
+            }
+        } else { // Utente non loggato o stato nullo
+            loggedOutView.style.display = 'block';
+            loggedInView.style.display = 'none';
+            bannedOverlay.style.display = 'none';
+            toggleFeatures(true);
+            document.getElementById('lock-message').style.display = 'none';
+            document.getElementById('unlock-message').style.display = 'none';
+        }
     };
 
-    // Ascolta gli eventi che indicano attività
-    window.addEventListener('mousemove', updateUserActivity, { passive: true });
-    window.addEventListener('keydown', updateUserActivity, { passive: true });
-    window.addEventListener('click', updateUserActivity, { passive: true });
-    window.addEventListener('scroll', updateUserActivity, { passive: true });
-
-    // Funzione per controllare e aggiornare lo stato
+    // --- LOGICA DI POLLING ATTIVO ---
     const checkUserStatusPeriodically = async () => {
-        // Esegui il check solo se l'utente è loggato e attivo
-        const userIsActive = (Date.now() - lastActivityTime) < (2 * 60 * 1000); // Attivo negli ultimi 2 minuti
-
-        if (userIsLoggedIn && userIsActive) {
+        const userIsActive = (Date.now() - lastActivityTime) < (2 * 60 * 1000); // 2 minuti
+        
+        // Esegui solo se abbiamo uno stato e l'utente è loggato e attivo
+        if (currentUserStatus && currentUserStatus.isLoggedIn && userIsActive) {
             console.log("Utente attivo, forzo l'aggiornamento dello stato...");
             try {
                 const response = await fetch('/api/status?force-refresh=true');
+                if (!response.ok) throw new Error('Network response was not ok');
+                
                 const latestStatus = await response.json();
 
-                // Qui puoi opzionalmente confrontare il nuovo stato con quello vecchio
-                // e ricaricare la pagina o aggiornare l'UI se lo stato 'isMember' è cambiato.
-                // Per semplicità, la prossima volta che la UI viene verificata, userà i dati aggiornati
-                // che sono già nel nuovo cookie.
+                // Aggiorna la UI SOLO se lo stato di "membro" è cambiato
+                if (latestStatus.isMember !== currentUserStatus.isMember) {
+                    console.log("Stato 'isMember' cambiato, aggiorno la UI!");
+                    currentUserStatus = latestStatus;
+                    updateUI(currentUserStatus);
+                }
             } catch (error) {
                 console.error('Errore nel polling dello stato:', error);
             }
         }
     };
-    
-    // Avvia il timer di controllo (es. ogni 30 secondi)
-    setInterval(checkUserStatusPeriodically, 30 * 1000);
+
+    // --- FUNZIONE PRINCIPALE DI INIZIALIZZAZIONE ---
+    const initializeApp = async () => {
+        // 1. Controlla lo stato iniziale al caricamento
+        try {
+            const response = await fetch('/api/status');
+            if (!response.ok) throw new Error('Initial status fetch failed');
+            
+            currentUserStatus = await response.json();
+            updateUI(currentUserStatus);
+        } catch (error) {
+            console.error('Error checking initial login status:', error);
+            updateUI(null); // Mostra lo stato di logout in caso di errore
+        }
+
+        // 2. Ascolta l'attività dell'utente
+        const updateUserActivity = () => { lastActivityTime = Date.now(); };
+        window.addEventListener('mousemove', updateUserActivity, { passive: true });
+        window.addEventListener('keydown', updateUserActivity, { passive: true });
+        window.addEventListener('click', updateUserActivity, { passive: true });
+        window.addEventListener('scroll', updateUserActivity, { passive: true });
+
+        // 3. Avvia il timer di controllo PERIODICO solo dopo aver ottenuto lo stato iniziale
+        setInterval(checkUserStatusPeriodically, 30 * 1000); // Controlla ogni 30 secondi
+    };
+
+    // Avvia tutto
+    initializeApp();
+
+
 
     // Controlla lo stato del login all'avvio
    try {
