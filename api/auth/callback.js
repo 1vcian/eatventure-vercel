@@ -52,6 +52,7 @@ export default async function handler(req, res) {
             expiresAt: Date.now() + (tokenData.expires_in * 1000),
                 username: userData.username // ✅ AGGIUNGI QUESTA RIGA
         };
+        console.log(userData.username,"logged")
         await kv.set(`user-tokens:${userData.id}`, tokenInfo);
         
         const guildsResponse = await fetch('https://discord.com/api/users/@me/guilds', {
