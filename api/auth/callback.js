@@ -77,6 +77,7 @@ export default async function handler(req, res) {
             secure: process.env.NODE_ENV !== 'development',
             maxAge: 60 * 30, // 30 minuti
             path: '/',
+              sameSite: 'lax' 
         });
 
         res.setHeader('Set-Cookie', cookie);
