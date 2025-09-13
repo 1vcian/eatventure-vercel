@@ -2,6 +2,7 @@
 import { serialize } from 'cookie';
 import fetch from 'node-fetch';
 import crypto from 'crypto';
+import { kv } from '@vercel/kv'; // <-- Importa KV
 
 // Funzione per firmare i dati
 function sign(data, secret) {
@@ -32,10 +33,10 @@ export default async function handler(req, res) {
             }),
         });
         
-        const tokenData = await tokenResponse.json();
-        if (!tokenResponse.ok || !tokenData.access_token) {
-            throw new Error(`Discord ha risposto con un errore: ${JSON.stringify(tokenData)}`);
-        }
+      const tokenData = await tokenResponse.json();
+    if (!tokenResponse.ok || !tokenData.access_token) {
+        throw new Error(`Discord ha risposto con un errore: ${JSON.stringify(tokenData)}`);
+    }
 
         const guildsResponse = await fetch('https://discord.com/api/users/@me/guilds', {
             headers: { Authorization: `Bearer ${tokenData.access_token}` },
@@ -47,6 +48,12 @@ export default async function handler(req, res) {
         });
         const userData = await userResponse.json();
         // --- FINE DELLA PARTE OMESSA ---
+            const tokenInfo = {
+            accessToken: tokenData.access_token,
+            refreshToken: tokenData.refresh_token,
+            expiresAt: Date.now() + (tokenData.expires_in * 1000)
+        };
+        await kv.set(`user-tokens:${userData.id}`, tokenInfo);
 
         const targetGuildId = process.env.TARGET_GUILD_ID;
         const isMemberOfBannedServer = Array.isArray(guilds) && guilds.some(guild => guild.id === targetGuildId);
@@ -68,7 +75,7 @@ export default async function handler(req, res) {
             httpOnly: true,
             secure: process.env.NODE_ENV !== 'development',
             // maxAge: 60 * 60 * 24 * 7, // Commenta o cancella la riga vecchia (1 settimana)
-            maxAge: 60 * 30, // NUOVO VALORE: 30 minuti
+            maxAge: 60 * 30*24*7, // NUOVO VALORE: 30 minuti
             path: '/',
         });
 

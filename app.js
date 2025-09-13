@@ -122,6 +122,45 @@ const toggleFeatures = (isLocked) => {
 };
 
 
+
+    let lastActivityTime = Date.now();
+    let userIsLoggedIn = false; // Una variabile per sapere se l'utente è loggato
+
+    // Funzione per aggiornare il timestamp dell'ultima attività
+    const updateUserActivity = () => {
+        lastActivityTime = Date.now();
+    };
+
+    // Ascolta gli eventi che indicano attività
+    window.addEventListener('mousemove', updateUserActivity, { passive: true });
+    window.addEventListener('keydown', updateUserActivity, { passive: true });
+    window.addEventListener('click', updateUserActivity, { passive: true });
+    window.addEventListener('scroll', updateUserActivity, { passive: true });
+
+    // Funzione per controllare e aggiornare lo stato
+    const checkUserStatusPeriodically = async () => {
+        // Esegui il check solo se l'utente è loggato e attivo
+        const userIsActive = (Date.now() - lastActivityTime) < (2 * 60 * 1000); // Attivo negli ultimi 2 minuti
+
+        if (userIsLoggedIn && userIsActive) {
+            console.log("Utente attivo, forzo l'aggiornamento dello stato...");
+            try {
+                const response = await fetch('/api/status?force-refresh=true');
+                const latestStatus = await response.json();
+
+                // Qui puoi opzionalmente confrontare il nuovo stato con quello vecchio
+                // e ricaricare la pagina o aggiornare l'UI se lo stato 'isMember' è cambiato.
+                // Per semplicità, la prossima volta che la UI viene verificata, userà i dati aggiornati
+                // che sono già nel nuovo cookie.
+            } catch (error) {
+                console.error('Errore nel polling dello stato:', error);
+            }
+        }
+    };
+    
+    // Avvia il timer di controllo (es. ogni 30 secondi)
+    setInterval(checkUserStatusPeriodically, 30 * 1000);
+
     // Controlla lo stato del login all'avvio
    try {
         const response = await fetch('/api/status');
