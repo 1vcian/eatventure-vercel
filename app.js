@@ -1,3 +1,65 @@
+document.addEventListener('DOMContentLoaded', async () => {
+    // Selettori per gli elementi da bloccare
+    const requiresLoginSelectors = [
+        // Chest da bloccare
+        '.card[data-card-id="small"]',
+        '.card[data-card-id="pet"]',
+        '.card[data-card-id="clan"]',
+        '.card[data-card-id^="adventure_"]',
+        '.card[data-card-id^="event_"]',
+        // Bottone di ricerca globale
+        '.global-search-btn'
+    ];
+
+    const elementsToToggle = document.querySelectorAll(requiresLoginSelectors.join(', '));
+
+    // Funzione per bloccare/sbloccare le feature
+    const toggleFeatures = (isLocked) => {
+        elementsToToggle.forEach(el => {
+            el.style.opacity = isLocked ? '0.5' : '1';
+            el.style.pointerEvents = isLocked ? 'none' : 'auto';
+            
+            if (isLocked) {
+                // Aggiungi un tooltip per indicare che è necessaria l'autenticazione
+                el.setAttribute('title', 'Accedi con Discord per usare questa funzione');
+            } else {
+                el.removeAttribute('title');
+            }
+        });
+    };
+
+    try {
+        const response = await fetch('/api/status');
+        const data = await response.json();
+
+        const loggedOutView = document.getElementById('user-logged-out');
+        const loggedInView = document.getElementById('user-logged-in');
+        const toolContainer = document.getElementById('tool-container');
+        const bannedOverlay = document.getElementById('banned-user-overlay');
+
+        if (data.isLoggedIn) {
+            if (data.isMember) {
+                // Utente loggato MA membro del server bloccato
+                toolContainer.style.display = 'none';
+                bannedOverlay.style.display = 'flex'; // Mostra il messaggio di blocco
+            } else {
+                // Utente loggato e autorizzato
+                loggedOutView.style.display = 'none';
+                loggedInView.style.display = 'block';
+                toggleFeatures(false); // Sblocca tutto
+            }
+        } else {
+            // Utente non loggato
+            loggedOutView.style.display = 'block';
+            loggedInView.style.display = 'none';
+            toggleFeatures(true); // Blocca le feature premium
+        }
+    } catch (error) {
+        console.error('Error checking login status:', error);
+        toggleFeatures(true); // In caso di errore, blocca tutto per sicurezza
+    }
+
+    
 // Game Data
 const LOOT_TABLES = {
     small: { title: 'Small Box', itemsPerChest: 2, totalWeight: 10025, table: [ { result: { type: 'Equipment', rarity: 'Common' }, weight: 6000 }, { result: { type: 'Equipment', rarity: 'Rare' }, weight: 1200 }, { result: { type: 'Equipment', rarity: 'Epic' }, weight: 300 }, { result: { type: 'Pet Egg', rarity: 'Common' }, weight: 100 }, { result: { type: 'Pet Egg', rarity: 'Rare' }, weight: 25 }, { result: { type: 'Pet Food', rarity: 'None' }, weight: 2400 }, ] },
@@ -879,4 +941,5 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('calculatePetFoodBtn').addEventListener('click', calculatePetFood);
     document.getElementById('calculateXpBtn').addEventListener('click', calculateXP);
+});
 });
