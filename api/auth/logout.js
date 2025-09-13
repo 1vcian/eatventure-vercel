@@ -8,6 +8,7 @@ export default function handler(req, res) {
     secure: process.env.NODE_ENV !== 'development',
     maxAge: -1, // <-- QUESTA È LA CORREZIONE FONDAMENTALE
     path: '/',
+    sameSite: 'lax' 
   });
 
   res.setHeader('Set-Cookie', cookie);
