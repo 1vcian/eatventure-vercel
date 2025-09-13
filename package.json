@@ -8,10 +8,13 @@
     "redis": "^5.8.2"
   },
   "devDependencies": {
-    "javascript-obfuscator": "^4.1.0"
+    "cp-cli": "^2.0.0",
+    "javascript-obfuscator": "^4.1.0",
+    "mkdirp": "^3.0.1",
+    "rimraf": "^6.0.1"
   },
-"scripts": {
+  "scripts": {
     "obfuscate": "node obfuscate.js",
-    "build": "npm run obfuscate"
+    "build": "rimraf public && mkdirp public && npm run obfuscate && cp-cli index.html unity-random.js public && cp-cli src public/src"
   }
 }
