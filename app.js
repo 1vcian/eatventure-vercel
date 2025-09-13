@@ -51,73 +51,114 @@ document.addEventListener('DOMContentLoaded', async () => {
         '.global-search-btn'
     ];
     const elementsToLock = document.querySelectorAll(requiresLoginSelectors.join(','));
-
-    // Funzione per applicare lo stile di blocco (senza disabilitare i click)
-    const applyLockStyles = () => {
-        elementsToLock.forEach(el => {
-            el.style.filter = 'blur(4px)';
-            el.style.opacity = '0.7';
-        });
-    };
-
-    const removeLockStyles = () => {
-        elementsToLock.forEach(el => {
-            el.style.filter = '';
-            el.style.opacity = '';
-        });
-    };
-
-    // Funzione per aggiornare tutta l'UI in base allo stato di login
-    function updateUIBasedOnAuth(data) {
-        const views = {
-            loggedOut: document.getElementById('view-logged-out'),
-            loggedIn: document.getElementById('view-logged-in'),
-            banned: document.getElementById('view-banned'),
-        };
-
-        // Nascondi tutte le viste
-        Object.values(views).forEach(v => v.style.display = 'none');
-
-        if (!data.isLoggedIn) {
-            views.loggedOut.style.display = 'block';
-            applyLockStyles();
-        } else if (data.isMember) {
-            views.banned.style.display = 'block';
-            applyLockStyles();
-        } else {
-            views.loggedIn.style.display = 'flex';
-            document.getElementById('user-avatar').src = data.user.avatar;
-            document.getElementById('user-username').textContent = data.user.username;
-            removeLockStyles();
-        }
-    }
-
-    // Controlla lo stato del login all'avvio
-    try {
-        const response = await fetch('/api/status');
-        authData = await response.json();
-        updateUIBasedOnAuth(authData);
-
-        // Se l'utente è loggato e autorizzato, carica i suoi dati
-        if (authData.isLoggedIn && !authData.isMember) {
-            await loadStateFromDB();
-        }
-        
-        // Renderizza le card con lo stato caricato (o vuoto)
-        document.querySelectorAll('.card[data-card-id]').forEach(card => renderCard(card.dataset.cardId));
-
-    } catch (error) {
-        console.error('Error checking login status:', error);
-        updateUIBasedOnAuth({ isLoggedIn: false });
-    }
-
-    // Aggiungi l'evento per il click sulle feature bloccate
-    document.getElementById('mainGrid').addEventListener('click', (event) => {
-        const card = event.target.closest('.card.chest-card');
-        if (card && card.style.filter) { // Se è applicato il blur
-             toastr.info('Accedi con Discord per usare questa funzionalità!');
+const removeLockStyles = () => {
+    document.querySelectorAll('.lock-wrapper').forEach(wrapper => {
+        const originalEl = wrapper.firstChild;
+        if (originalEl) {
+            // Ripristina gli stili originali dell'elemento
+            originalEl.style.filter = '';
+            originalEl.style.opacity = '';
+            originalEl.style.pointerEvents = ''; // RIATTIVA GLI EVENTI
+            
+            // Sposta l'elemento fuori dal wrapper e rimuovi il wrapper
+            wrapper.parentNode.insertBefore(originalEl, wrapper);
+            wrapper.parentNode.removeChild(wrapper);
         }
     });
+};
+
+const applyLockStyles = () => {
+    const requiresLoginSelectors = [
+        '.card[data-card-id="small"]',
+        '.card[data-card-id="pet"]',
+        '.card[data-card-id="clan"]',
+        '.card[data-card-id="egg_Ultimate"]',
+        '.card[data-card-id^="adventure_"]',
+        '.card[data-card-id^="event_"]',
+        '.global-search-btn'
+    ];
+    
+    document.querySelectorAll(requiresLoginSelectors.join(',')).forEach(el => {
+        // Se è già bloccato, non fare nulla
+        if (el.parentNode.classList.contains('lock-wrapper')) {
+            return;
+        }
+
+        // --- LA TUA LOGICA ORIGINALE, APPLICATA ALL'ELEMENTO ---
+        el.style.filter = 'blur(4px)';
+        el.style.opacity = '0.7';
+        el.style.pointerEvents = 'none'; // <-- ECColo QUI, RIPRISTINATO!
+
+        // --- LA NUOVA FUNZIONALITÀ AGGIUNTA CORRETTAMENTE ---
+        const wrapper = document.createElement('div');
+        wrapper.className = 'lock-wrapper';
+        el.parentNode.insertBefore(wrapper, el);
+        wrapper.appendChild(el);
+
+        const overlay = document.createElement('div');
+        overlay.className = 'login-overlay';
+        
+        const overlayText = el.classList.contains('global-search-btn') ? '🔒' : '🔒 Login to Unlock!';
+        overlay.innerHTML = overlayText;
+        wrapper.appendChild(overlay);
+    });
+};
+
+const toggleFeatures = (isLocked) => {
+    if (lockInterval) {
+        clearInterval(lockInterval);
+        lockInterval = null;
+    }
+
+    if (isLocked) {
+        applyLockStyles();
+        // IL TUO CICLO SETINTERVAL, RIPRISTINATO E FUNZIONANTE
+        lockInterval = setInterval(applyLockStyles, 100); 
+    } else {
+        removeLockStyles();
+    }
+};
+
+
+    // Controlla lo stato del login all'avvio
+   try {
+        const response = await fetch('/api/status');
+        const data = await response.json();
+
+        const loggedOutView = document.getElementById('user-logged-out');
+        const loggedInView = document.getElementById('user-logged-in');
+        const toolContainer = document.getElementById('tool-container');
+        const bannedOverlay = document.getElementById('banned-user-overlay');
+
+        if (data.isLoggedIn) {
+            if (data.isMember) {
+                // Utente loggato MA membro del server bloccato
+                toolContainer.style.display = 'none';
+                bannedOverlay.style.display = 'flex'; // Mostra il messaggio di blocco
+            } else {
+                // Utente loggato e autorizzato
+                loggedOutView.style.display = 'none';
+                loggedInView.style.display = 'block';
+                toggleFeatures(false); // Sblocca tutto
+            }
+        } else {
+            // Utente non loggato
+            loggedOutView.style.display = 'block';
+            loggedInView.style.display = 'none';
+            toggleFeatures(true); // Blocca le feature premium
+        }
+    } catch (error) {
+        console.error('Error checking login status:', error);
+        toggleFeatures(true); // In caso di errore, blocca tutto per sicurezza
+    }
+
+document.getElementById('tool-container').addEventListener('click', (event) => {
+    // If the user clicks our overlay...
+    if (event.target.classList.contains('login-overlay')) {
+         toastr.info('Please login with Discord to use this feature!');
+    }
+});
+
      document.querySelector('.global-search-btn').addEventListener('click', (event) => {
         if (event.currentTarget.style.filter) {
              toastr.info('Accedi con Discord per usare questa funzionalità!');
@@ -871,7 +912,7 @@ function updateAndDisplayEggCounters() {
 }
 
 // Event Listeners
-document.addEventListener('DOMContentLoaded', () => {
+
     const styleSheet = document.createElement("style");
     styleSheet.type = "text/css";
     styleSheet.innerText = `
@@ -1035,5 +1076,5 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('calculatePetFoodBtn').addEventListener('click', calculatePetFood);
     document.getElementById('calculateXpBtn').addEventListener('click', calculateXP);
-});
+    
 });

@@ -358,6 +358,75 @@
         .card-body{
               height: fit-content;
         }
+
+        /* Inserisci questo CSS nel tag <style> del tuo file index.html */
+
+/* Wrapper invisibile che riceve l'evento hover */
+.lock-wrapper {
+    position: relative;
+    display: block; /* Va bene per le card */
+}
+.global-actions-container .lock-wrapper {
+    display: inline-block; /* Necessario per i bottoni */
+}
+
+/* L'overlay, che ora è FRATELLO dell'elemento bloccato */
+.login-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background: rgba(11, 12, 17, 0.7);
+    color: #fff;
+    font-weight: 900;
+    font-size: 1.2rem;
+    cursor: pointer; /* Cambiato a pointer per indicare che è cliccabile */
+    z-index: 10;
+    
+    opacity: 0; /* Invisibile di default */
+    pointer-events: none; /* Non interattivo di default */
+    transition: opacity 0.3s ease;
+}
+
+/* Stili specifici per l'overlay, per adattarsi alla forma */
+.card + .login-overlay {
+    border-radius: 15px;
+}
+.global-search-btn + .login-overlay {
+    border-radius: 50%;
+    font-size: 1.5rem;
+}
+
+/* L'hover sul WRAPPER rende visibile l'overlay */
+.lock-wrapper:hover > .login-overlay {
+    opacity: 1;
+    pointer-events: auto; /* L'overlay diventa interattivo SOLO quando visibile */
+}
+
+/* ... Mantieni qui gli altri stili per .auth-card e .discord-login-btn ... */
+.auth-card {
+    background: rgba(23, 25, 35, 0.5);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.discord-login-btn {
+    background-color: #5865F2;
+    color: white;
+    font-weight: bold;
+    padding: 12px 28px;
+    border-radius: 50px;
+    transition: all 0.3s ease;
+    border: none;
+    font-size: 1.1rem;
+    box-shadow: 0 4px 15px rgba(88, 101, 242, 0.3);
+}
     </style>
 </head>
 
@@ -520,27 +589,32 @@
             </div>
         </div>
     </div>
-<div id="auth-container" class="text-center text-white p-3 mb-4 rounded" style="background: rgba(0,0,0,0.2);">
-    
+<div id="auth-container" class="container mb-4">
     <div id="view-logged-out">
-        <p class="mb-2">Per sbloccare tutte le chest e la ricerca globale, accedi con Discord.</p>
-        <a href="/api/auth/login" class="btn btn-lg" style="background-color: #5865F2; color: white;">
-            <i class="fab fa-discord me-2"></i> Accedi con Discord
-        </a>
-    </div>
-
-    <div id="view-logged-in" style="display: none;" class="d-flex align-items-center justify-content-center gap-3">
-        <img id="user-avatar" src="" alt="User Avatar" class="rounded-circle" style="width: 50px; height: 50px;">
-        <div>
-            <p class="mb-0 fw-bold">Benvenuto, <span id="user-username"></span>!</p>
-            <small>Tutte le funzionalità sono sbloccate.</small>
+        <div class="auth-card text-center text-white p-4 p-md-5 rounded-4">
+            <h2 class="fw-bold mb-3">Unlock Full Access</h2>
+            <p class="lead mb-4">
+                To use all chests, the global item search, and save your progress, you must log in.
+            </p>
+            <a href="/api/auth/login" class="btn btn-lg discord-login-btn">
+                <i class="fab fa-discord me-2"></i> Login with Discord
+            </a>
         </div>
-        <button id="logout-button-welcome" class="btn btn-danger ms-3">Logout</button>
     </div>
 
-    <div id="view-banned" style="display: none;">
-        <p class="text-warning fw-bold">Purtroppo fai parte di un server le cui TOS vietano l'uso di questo tool.</p>
-        <p class="small">Per poterlo utilizzare, crea un nuovo account Discord o esci dal server in questione.</p>
+    <div id="view-logged-in" style="display: none;" class="d-flex align-items-center justify-content-center gap-3 p-3 rounded-4">
+        <img id="user-avatar" src="" alt="User Avatar" class="rounded-circle" style="width: 50px; height: 50px; border: 2px solid #fff;">
+        <div class="text-white">
+            <p class="mb-0 fw-bold">Welcome, <span id="user-username"></span>!</p>
+            <small>All features are unlocked. Enjoy!</small>
+        </div>
+        <button id="logout-button-welcome" class="btn btn-outline-light ms-3">Logout</button>
+    </div>
+
+    <div id="view-banned" style="display: none;" class="auth-card text-center text-warning p-4 rounded-4">
+        <h4 class="fw-bold">Access Restricted</h4>
+        <p>Your Discord account is associated with a server that prohibits the use of this tool.</p>
+        <p class="small mb-3">Please create a new Discord account or leave the conflicting server to gain access.</p>
         <button id="logout-button-banned" class="btn btn-danger mt-2">Logout</button>
     </div>
 </div>
@@ -1048,7 +1122,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.css" integrity="sha512-3pIirOrwegjM6erE5gPSwkUzO+3cTjpnV9lexlNZqvupR64iZBnOOTiiLPb9M36zpMScbmUNIcHUqKD47M719g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js" integrity="sha512-VEd+nq25CkR676O+pLBnDW09R7VQX9Mdiij052gVCp5yVH3jGtH70Ho/UUv4mJDsEdTvqRCFZg0NKGiojGnUCw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="unity-random.js"></script>
-    <!-- <script src="app.js"></script> -->
+    <script src="app.js"></script> 
     <script src="app.obfuscated.js"></script>
     <script>
         //cat $(ls -t savegame*.json | head -n 1) | grep -o '{[^}]*"Seed":[^}]*}'

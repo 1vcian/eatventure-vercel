@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eatventure Loot Predictor</title>
+    <link rel="icon" type="image/png" href="src/ChallengeIcon.png">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --rarity-common: #c3cfd5;
+            --rarity-rare: #98c379;
+            --rarity-epic: #c678dd;
+            --rarity-legendary: #e5c07b;
+            --rarity-ultimate: #e06c75;
+            --rarity-mythic: #61afef;
+        }
+        @keyframes popAndFade {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) rotate(var(--rand-rot, 0deg)) translateY(0);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1.1) rotate(var(--rand-rot, 0deg)) translateY(-10px);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.8) rotate(var(--rand-rot, 0deg)) translateY(-30px);
+  }
+}
+
+.click-effect {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  pointer-events: none;
+  z-index: 9999;
+  animation: popAndFade 600ms ease-out forwards;
+}
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      
+                font-family: 'Roboto', sans-serif;
+        }
+        
+        .main-header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            margin-bottom: 2rem;
+        }
+        
+        .chest-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .chest-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+        
+        .chest-header {
+            background: linear-gradient(45deg, #6000ff00, #0707ff4a);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            padding: 1rem;
+        }
+        
+        .loot-entry {
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 4px solid var(--rarity-common);
+            backdrop-filter: blur(5px);
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+                height: auto;
+        }
+        .col-12{
+    height: fit-content;
+        }
+        .col-4{
+    height: fit-content;
+        }
+        
+        .loot-entry:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+        .rarity-common { 
+ 
+            border-color: var(--rarity-common);
+        }
+        .rarity-rare { 
+    
+            border-color: var(--rarity-rare);
+        }
+        .rarity-epic { 
+         
+            border-color: var(--rarity-epic);
+        }
+        .rarity-legendary { 
+         
+            border-color: var(--rarity-legendary);
+        }
+        .rarity-ultimate { 
+         
+            border-color: var(--rarity-ultimate);
+        }
+        .rarity-mythic {
+            animation: mythic-glow 2.5s linear infinite;
+            border-color: #61afef;
+        }
+
+        .rarity-mythic-bg {
+            animation: mythic-glow-bg 2.5s linear infinite;
+            background: #61afef;
+        }
+        
+        @keyframes mythic-glow {
+            0% { 
+         
+                border-color: #61afef;
+            }
+            33% { 
+     
+                border-color: #c678dd;
+            }
+            66% { 
+             
+                border-color: #FF69B4;
+            }
+            100% { 
+         
+                border-color: #61afef;
+            }
+        }
+               
+        @keyframes mythic-glow-bg {
+            0% { 
+         
+                background: #61afef;
+            }
+            33% { 
+     
+                background: #c678dd;
+            }
+            66% { 
+             
+                background: #FF69B4;
+            }
+            100% { 
+         
+                background: #61afef;
+            }
+        }
+        .label-rarity{
+                color: whitesmoke;
+                position: absolute;
+               top: 100%;
+                   font-size: x-small;
+                       width: -webkit-fill-available;
+                       text-align: center;
+        }
+        .item-image {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+            image-rendering: crisp-edges;
+            cursor: pointer;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .item-image:hover {
+            border-color: #ffc107;
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(255, 193, 7, 0.5);
+        }
+        
+        .search-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 1050;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .search-modal {
+            background: rgba(40, 40, 55, 0.95);
+            color: white;
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+.global-actions-container {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Adds space between the buttons */
+    align-items: flex-end; /* Aligns items to the right */
+    z-index: 1000;
+}
+
+.global-search-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+    border: none;
+    color: white;
+    font-size: 24px;
+    box-shadow: 0 10px 30px rgba(238, 90, 36, 0.3);
+    transition: all 0.3s ease;
+}
+
+.global-search-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 15px 40px rgba(238, 90, 36, 0.5);
+}
+
+.global-support-btn {
+    width: auto;
+    padding: 10px 15px;
+    border-radius: 50px; /* Use a higher value for a pill-like shape */
+    font-size: 16px;
+    box-shadow: 0 10px 30px rgba(235, 168, 0, 0.3);
+    transition: all 0.3s ease;
+    white-space: nowrap; /* Prevents the text from wrapping */
+}
+.debug{display:none}
+
+.global-support-btn:hover {
+    transform: scale(1.05); /* Slightly smaller scale to fit the pill shape */
+    box-shadow: 0 15px 40px rgba(235, 168, 0, 0.7);
+}
+        
+        .results-container {
+            max-height: 600px;
+            overflow-y: auto;
+                height: -webkit-fill-available;
+                    overflow-x: hidden;
+        }
+        
+        .results-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .results-container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        
+        .results-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 193, 7, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
+        }
+        
+        .support-section {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.2);
+        }
+        
+        .support-btn {
+            border-radius: 25px;
+            padding: 8px 16px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .support-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            text-decoration: none;
+        }
+        
+        .special-thanks {
+            font-size: 0.9rem;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .special-thanks a {
+            transition: all 0.3s ease;
+        }
+        
+        .special-thanks a:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+        
+        @media (max-width: 768px) {
+            .support-section .d-flex {
+                flex-direction: column;
+                gap: 0.75rem !important;
+            }
+            
+            .special-thanks {
+                flex-direction: column;
+                text-align: center;
+                gap: 0.5rem;
+            }
+        }
+        .item-card{
+             display: flex;
+    flex-flow: column;
+    position: relative;
+    border-width: 8px 8px 28px 8px;
+    border-style: solid;
+    width: 70px;
+    border-radius: 8px;
+    background: whitesmoke;
+
+        }
+        .card-body{
+              height: fit-content;
+        }
+    </style>
+</head>
+
+
+
+<body>
+<div id="tool-container">
+    <div class="container-fluid mb-4" >
+       <div class="container mt-5">
+        <div class="main-header rounded-3 p-4 text-center text-white mb-4">
+            <h1 class="display-4 fw-bold">
+                <i class="fas fa-treasure-chest me-3"></i>
+                Eatventure Loot Predictor
+            </h1>
+            <p class="lead mb-0">Simulate chest openings and find your desired items</p>
+        </div>
+    <nav class="navbar navbar-expand-lg navbar-dark " >
+        <div class="container-fluid d-flex justify-content-center gap-3">
+            <a class="btn btn-warning support-btn" href="https://buymeacoffee.com/1vcian" target="_blank">
+                ☕ Support the project, buy me a coffee!
+            </a>
+            <a class="btn btn-light support-btn" href="https://github.com/1vcian" target="_blank">
+                <i class="fab fa-github"></i> Github
+            </a>
+            <a class="btn btn-info support-btn" href="https://1vcian.github.io/Portfolio/" target="_blank">
+                💼 Portfolio
+            </a>
+            <a href="https://www.youtube.com/@retro4hack" class="btn btn-danger  support-btn " target="_blank">
+                <i class="fab fa-youtube"></i>  Special thanks to @Retro4Hack 🙏
+            </a>
+        </div>
+    </nav>
+
+        <div class=" p-4 mb-4">
+               <div class="text-center mb-4 d-flex flex-column" style="    align-items: center;">
+        <button id="telegram" class="btn btn-lg mb-2 telegram-btn" style="
+            color: whitesmoke;
+            font-size: xx-large;
+            font-weight: 600;
+            width: fit-content;
+            background: linear-gradient(-45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
+            background-size: 400% 400%;
+            animation: rainbow 10s ease infinite, pulse 2s infinite, glow 1s ease-in-out infinite alternate;
+            border: none;
+            border-radius: 15px;
+            padding: 10px 25px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            box-shadow: 0 0 15px rgba(0,0,0,0.3),
+                        inset 0 0 10px rgba(255,255,255,0.2);" 
+            onclick="window.open('https://t.me/+WlOeef4P6uczMjBk', '_blank')">
+            <span style="position: relative; z-index: 1;"> <i class="fab fa-telegram"></i>  Join Telegram Group to get updates and help!</span>
+        </button>
+
+<style>
+@keyframes rainbow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+@keyframes glow {
+    from {
+        box-shadow: 0 0 15px rgba(0,0,0,0.3),
+                    inset 0 0 10px rgba(255,255,255,0.2),
+                    0 0 20px rgba(255,255,255,0.2);
+    }
+    to {
+        box-shadow: 0 0 15px rgba(0,0,0,0.3),
+                    inset 0 0 10px rgba(255,255,255,0.2),
+                    0 0 30px rgba(255,255,255,0.4);
+    }
+}
+
+.telegram-btn:hover {
+    animation: rainbow 10s ease infinite, pulse 1s infinite, glow 0.5s ease-in-out infinite alternate;
+    cursor: pointer;
+}
+</style>
+
+<style>
+@keyframes rainbow {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+</style>
+            <button id="toggleTutorial" style="width: fit-content;" class="btn btn-info btn-lg">Show Tutorial</button>
+        </div>
+
+        <div id="tutorialCard" class="card p-4 mb-4" style="display: none;">
+                <h2 class="card-title fw-bold mb-3">A Quick Guide to Getting Started</h2>
+                <p class="card-text">Welcome! To use this <strong>Eatventure Loot Predictor</strong>, you'll need to find your game's <strong>seed</strong> values. These seeds are a unique set of numbers that determine the contents of your chests. Don't worry, it's a simple process.</p>
+                <p class="card-text">Here’s a step-by-step tutorial for <strong>Android</strong> devices:</p>
+                <ol class="list-group list-group-flush">
+                    <li class="list-group-item">1. On your Android device, go to your phone's file manager.I suggest using this file manager because it allows you to read hidden folders.</li>
+                    <li class="list-group-item"><img  style="margin: 0 auto;
+    display: block;
+    width: 30%;" src="./src/fileManager.png" alt="fileManager" class="img-fluid"></li>
+                    <li class="list-group-item">2. Navigate to the following directory: <code>/sdcard/Android/data/com.hwqgrhhjfd.idlefastfood/files</code></li>
+                    <li class="list-group-item">3. Inside, you'll find several save files named  <code>savegame.json</code>. Open the one with the most recent modification date with your favourite text editor, i use this one.</li>
+                    <li class="list-group-item"><img  style="margin: 0 auto;
+    display: block;
+    width: 30%;" src="./src/editor.png" alt="editor" class="img-fluid"></li>
+                    <li class="list-group-item">Change the settings like that:<p><b style="color:green;">GREEN</b> Is for safety, so you cant edit anything and messup with the game</p> <p><b style="color:red">RED</b> has to be selected to have a better view of the file.</p> <p><b style="color:blue">BLUE</b> is where you will search the word "seed".</p></li>
+                    <li class="list-group-item"><img style="margin: 0 auto;
+    display: block;
+    width: 30%;" src="./src/Settings.jpeg" alt="editor" class="img-fluid"></li>
+                    <li class="list-group-item">4. Once the file is open, you'll see a lot of text. Search (blue square) for the word "seed" and find section that looks similar to this:</li>
+                </ol>
+                <pre class="bg-light p-3 rounded mt-3"><code>
+                    {"ChestId":0,"Count":0,"OpenedCount":1234,"Seed":123456789}     //Small Box
+                    {"ChestId":1,"Count":1234,"OpenedCount":150,"Seed":123456789}   //Big Box
+                    {"ChestId":2,"Count":1234,"OpenedCount":31,"Seed":123456789}    //Mine Box
+                    {"ChestId":3,"Count":1234,"OpenedCount":42,"Seed":123456789}    //Space Box
+                    {"ChestId":4,"Count":1234,"OpenedCount":76,"Seed":123456789}    //Seaport Box
+                    {"ChestId":5,"Count":1234,"OpenedCount":58,"Seed":123456789}    //Middle-Ages Box
+                    {"ChestId":6,"Count":1234,"OpenedCount":32,"Seed":123456789}    //Pet Box
+                    {"ChestId":7,"Count":1234,"OpenedCount":14,"Seed":123456789}    //Club Box
+                    {"ChestId":8,"Count":1234,"OpenedCount":14,"Seed":123456789}    //Gift Box (Christmas)
+                    {"ChestId":9,"Count":1234,"OpenedCount":179,"Seed":123456789}   //Adventure (Zeus) Box
+                    {"ChestId":10,"Count":1234,"OpenedCount":138,"Seed":123456789}  //Adventure (Pirate) Box
+                    {"ChestId":15,"Count":1234,"OpenedCount":10,"Seed":123456789}   //Potion Box
+                    
+                                    ...
+
+                    {"EggRarity":0,"Seed":123456789}    //Common Egg
+                    {"EggRarity":1,"Seed":123456789}    //Rare Egg
+                    {"EggRarity":2,"Seed":123456789}    //Epic Egg
+                    {"EggRarity":3,"Seed":123456789}    //Legendary Egg
+                    {"EggRarity":4,"Seed":123456789}    //Ultimate Egg
+                </code></pre>
+                <ol class="list-group list-group-flush" start="5">
+                    <i style="align-self: center;">(If you have never opened a chest of a type, so <strong>OpenedCount is 0</strong>, the <strong>first drop</strong> will be actually random)</i>
+                    <li class="list-group-item">5. Copy the <strong>seed</strong> number for each <code>ChestId</code> and <code>EggRarity</code> and paste it into the corresponding field on this page.</li>
+                    <li class="list-group-item">6. Once you've entered your seeds, you'll be able to simulate opening your chests and see what items you'll get!</li>
+                </ol>
+                <iframe style="    display: block; margin: 0 auto;" width="560" height="315" src="https://www.youtube.com/embed/f7YFcvu4UCY?si=VXHzkzME74JAzsN7" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+            </div>
+        </div>
+
+        <div class="card p-4 mb-4 text-center">
+            <div class="card-body">
+                <p class="mb-0 fw-bold">This is a totally free and independent project that required a lot of research and development.</p> 
+                 <p class="fw-bold"> If you find it useful and want to help keep it running, please consider supporting me (I wont add ADS 🤓).</p> 
+                <p class="mt-2 mb-0 ">A tutorial for iOS will be available soon! (at the moment the easiest way is to import your cloud savings on an android device and follow the Android tutorial)</p>
+                <p>If you find any bug or have any suggestion, question or need help, 
+                  contact me in the  <a href="https://t.me/+WlOeef4P6uczMjBk" target="_blank"><strong>Telegram Group</strong></a> </p>
+            </div>
+        </div>
+    </div>
+<div id="auth-container" class="text-center text-white p-3 mb-4 rounded" style="background: rgba(0,0,0,0.2);">
+    
+    <div id="view-logged-out">
+        <p class="mb-2">Per sbloccare tutte le chest e la ricerca globale, accedi con Discord.</p>
+        <a href="/api/auth/login" class="btn btn-lg" style="background-color: #5865F2; color: white;">
+            <i class="fab fa-discord me-2"></i> Accedi con Discord
+        </a>
+    </div>
+
+    <div id="view-logged-in" style="display: none;" class="d-flex align-items-center justify-content-center gap-3">
+        <img id="user-avatar" src="" alt="User Avatar" class="rounded-circle" style="width: 50px; height: 50px;">
+        <div>
+            <p class="mb-0 fw-bold">Benvenuto, <span id="user-username"></span>!</p>
+            <small>Tutte le funzionalità sono sbloccate.</small>
+        </div>
+        <button id="logout-button-welcome" class="btn btn-danger ms-3">Logout</button>
+    </div>
+
+    <div id="view-banned" style="display: none;">
+        <p class="text-warning fw-bold">Purtroppo fai parte di un server le cui TOS vietano l'uso di questo tool.</p>
+        <p class="small">Per poterlo utilizzare, crea un nuovo account Discord o esci dal server in questione.</p>
+        <button id="logout-button-banned" class="btn btn-danger mt-2">Logout</button>
+    </div>
+</div>
+
+
+
+        <div class="card p-4 mb-4 text-white" style="background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px);">
+            <h4 class="text-center mb-3"><i class="fas fa-egg me-2"></i>Global Egg Counter</h4>
+            <p class="text-center small mb-3">Enter the number of eggs you currently have in the game. The Pet Box counter will start from these values.</p>
+            <div id="global-egg-counter-container" class="d-flex justify-content-around align-items-center flex-wrap gap-3">
+                <div class="text-center">
+                    <img src="./src/Pet_Egg_Common.png" style="width: 40px; height: 40px;" alt="Common Egg">
+                    <input type="number" id="global-egg-common" class="form-control mt-2" placeholder="Common" min="0" style="width: 100px;">
+                </div>
+                <div class="text-center">
+                    <img src="./src/Pet_Egg_Rare.png" style="width: 40px; height: 40px;" alt="Rare Egg">
+                    <input type="number" id="global-egg-rare" class="form-control mt-2" placeholder="Rare" min="0" style="width: 100px;">
+                </div>
+                <div class="text-center">
+                    <img src="./src/Pet_Egg_Epic.png" style="width: 40px; height: 40px;" alt="Epic Egg">
+                    <input type="number" id="global-egg-epic" class="form-control mt-2" placeholder="Epic" min="0" style="width: 100px;">
+                </div>
+                <div class="text-center">
+                    <img src="./src/Pet_Egg_Legendary.png" style="width: 40px; height: 40px;" alt="Legendary Egg">
+                    <input type="number" id="global-egg-legendary" class="form-control mt-2" placeholder="Legendary" min="0" style="width: 100px;">
+                </div>
+                <div class="text-center">
+                    <img src="./src/Pet_Egg_Ultimate.png" style="width: 40px; height: 40px;" alt="Ultimate Egg">
+                    <input type="number" id="global-egg-ultimate" class="form-control mt-2" placeholder="Ultimate" min="0" style="width: 100px;">
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 pb-5 mb-5" id="mainGrid" style="justify-content: center;">
+            <div class="col-12 col-md-4">
+                <div class="card chest-card h-100" data-card-id="small">
+                    <div class="chest-header">
+                        <h5 class="mb-1"><img src="./src/SmallChestIcon.png" class="me-2" style="width: 60px; height: 60px;">Small Box</h5>
+                        <div class="d-flex justify-content-between">
+                            <small class="counter">Opened: 0</small>
+                            <small class="xp-counter">Total XP: 0</small>
+                            <small class="petfood-counter">Pet Food: 0</small>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text"><i class="fas fa-seedling"></i></span>
+                            <input type="number" class="form-control seed-input" placeholder="Enter seed ChestId 0">
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <button class="btn btn-primary" data-action="simulate" data-chest-type="small"><i class="fas fa-play me-1"></i>Open</button>
+                            <button class="btn btn-danger" data-action="clear"><i class="fas fa-trash me-1"></i>Clear</button>
+                            <button class="btn btn-info toggle-btn" data-action="toggle-history" style="display: none;"><i class="fas fa-history me-1"></i>Toggle History</button>
+                            <button class="btn btn-success" data-action="pet-food-calculator"><i class="fas fa-bone me-1"></i>Calc. Pet Food</button>
+                            <button class="btn btn-secondary" data-action="xp-calculator"><i class="fas fa-star me-1"></i>Calc. XP</button>
+                            <button class="btn btn-warning" data-action="local-search"><i class="fas fa-search me-1"></i>Find Item</button>
+                        </div>
+                        <div class="results-container"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-12 col-md-4">
+                <div class="card chest-card h-100" data-card-id="big">
+                    <div class="chest-header">
+                        <h5 class="mb-1"><img src="./src/BigChestIcon.png" class="me-2" style="width: 60px; height: 60px;">Big Box</h5>
+                        <div class="d-flex justify-content-between">
+                            <small class="counter">Opened: 0</small>
+                            <small class="xp-counter">Total XP: 0</small>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text"><i class="fas fa-seedling"></i></span>
+                            <input type="number" class="form-control seed-input" placeholder="Enter seed ChestId 1 ">
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <button class="btn btn-primary" data-action="simulate" data-chest-type="big"><i class="fas fa-play me-1"></i>Open</button>
+                            <button class="btn btn-danger" data-action="clear"><i class="fas fa-trash me-1"></i>Clear</button>
+                            <button class="btn btn-info toggle-btn" data-action="toggle-history" style="display: none;"><i class="fas fa-history me-1"></i>Toggle History</button>
+                            <button class="btn btn-secondary" data-action="xp-calculator"><i class="fas fa-star me-1"></i>Calc. XP</button>
+                            <button class="btn btn-warning" data-action="local-search"><i class="fas fa-search me-1"></i>Find Item</button>
+                        </div>
+                        <div class="results-container"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-12 col-md-4">
+                <div class="card chest-card h-100" data-card-id="pet">
+                    <div class="chest-header">
+                        <h5 class="mb-1"><img src="./src/PetChestIcon.png" class="me-2" style="width: 60px; height: 60px;">Pet Box</h5>
+                        <div class="d-flex justify-content-between">
+                            <small class="counter">Opened: 0</small>
+                            <small class="xp-counter">Total XP: 0</small>
+                            <small class="petfood-counter">Pet Food: 0</small>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text"><i class="fas fa-seedling"></i></span>
+                            <input type="number" class="seed-input form-control" placeholder="Enter seed ChestId 6 ">
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <button class="btn btn-primary" data-action="simulate" data-chest-type="pet"><i class="fas fa-play me-1"></i>Open</button>
+                            <button class="btn btn-danger" data-action="clear"><i class="fas fa-trash me-1"></i>Clear</button>
+                            <button class="btn btn-info toggle-btn" data-action="toggle-history" style="display: none;"><i class="fas fa-history me-1"></i>Toggle History</button>
+                            <button class="btn btn-secondary" data-action="xp-calculator"><i class="fas fa-star me-1"></i>Calc. XP</button>
+                            <button class="btn btn-warning" data-action="local-search"><i class="fas fa-search me-1"></i>Find Item</button>
+                        </div>
+                        <div class="results-container"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-12 col-md-4">
+                <div class="card chest-card h-100" data-card-id="clan">
+                    <div class="chest-header">
+                        <h5 class="mb-1"><img src="./src/ClubChestIcon.png" class="me-2" style="width: 60px; height: 60px;">Club Box</h5>
+                        <div class="d-flex justify-content-between">
+                            <small class="counter">Opened: 0</small>
+                            <small class="xp-counter">Total XP: 0</small>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text"><i class="fas fa-seedling"></i></span>
+                            <input type="number" class="seed-input form-control" placeholder="Enter seed ChestId 7 ">
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <button class="btn btn-primary" data-action="simulate" data-chest-type="clan"><i class="fas fa-play me-1"></i>Open</button>
+                            <button class="btn btn-danger" data-action="clear"><i class="fas fa-trash me-1"></i>Clear</button>
+                            <button class="btn btn-info toggle-btn" data-action="toggle-history" style="display: none;"><i class="fas fa-history me-1"></i>Toggle History</button>
+                            <button class="btn btn-secondary" data-action="xp-calculator"><i class="fas fa-star me-1"></i>Calc. XP</button>
+                            <button class="btn btn-warning" data-action="local-search"><i class="fas fa-search me-1"></i>Find Item</button>
+                        </div>
+                        <div class="results-container"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4">
+                <div class="card chest-card h-100" data-card-id="adventure_Zeus">
+                    <div class="chest-header">
+                        <h5 class="mb-1"><img src="./src/ZeusAncientIcon.png" class="me-2" style="width: 60px; height: 60px; ">Adventure: Zeus</h5>
+                        <p class="danger" style="font-size: 0.8em; color: #ffc107;">IT'S STILL IN BETA, ACCURATE TYPE BUT NOT ACCURATE ITEM, IF YOU FIND ONE PLEASE CONTACT ME 🫶🏻</p>
+                        <div class="d-flex justify-content-between">
+                            <small class="counter">Opened: 0</small>
+                            <small class="xp-counter">Total XP: 0</small>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text"><i class="fas fa-seedling"></i></span>
+                            <input type="number" class="form-control seed-input" placeholder="Enter seed ChestId 9">
+                        </div>
+                        <div class="input-group mb-3">
+                            <span class="input-group-text"><i class="fas fa-layer-group"></i></span>
+                            <input type="number" class="form-control level-input" placeholder="Enter Level (1-100)" min="1" max="100">
+                        </div>
+                        <div class="input-group mb-3">
+                            <span class="input-group-text"><i class="fas fa-key"></i> Vault %</span>
+                            <input type="number" class="form-control vault-percentage-input" placeholder="0-35" min="0" max="35">
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <button class="btn btn-primary" data-action="simulate" data-chest-type="adventure_Zeus" data-event-type="Zeus"><i class="fas fa-play me-1"></i>Open</button>
+                            <button class="btn btn-danger" data-action="clear"><i class="fas fa-trash me-1"></i>Clear</button>
+                            <button class="btn btn-info toggle-btn" data-action="toggle-history" style="display: none;"><i class="fas fa-history me-1"></i>Toggle History</button>
+                            <button class="btn btn-secondary" data-action="xp-calculator"><i class="fas fa-star me-1"></i>Calc. XP</button>
+                            <button class="btn btn-warning" data-action="local-search"><i class="fas fa-search me-1"></i>Find Item</button>
+                           <button class="btn btn-danger" data-action="toggle-what-if"><i class="fas fa-question-circle me-1"></i>What If</button>
+                        </div>
+                        <div class="results-container"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4">
+                <div class="card chest-card h-100" data-card-id="adventure_Pirate">
+                    <div class="chest-header">
+                        <h5 class="mb-1"><img src="./src/PirateEventIcon.png" class="me-2" style="width: 60px; height: 60px; ">Adventure: Pirate</h5>
+                          <p class="danger" style="font-size: 0.8em; color: #ffc107;">IT'S STILL IN BETA, ACCURATE TYPE BUT NOT ACCURATE ITEM, IF YOU FIND ONE PLEASE CONTACT ME 🫶🏻</p>
+                        <div class="d-flex justify-content-between">
+                            <small class="counter">Opened: 0</small>
+                            <small class="xp-counter">Total XP: 0</small>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text"><i class="fas fa-seedling"></i></span>
+                            <input type="number" class="form-control seed-input" placeholder="Enter seed ChestId 10">
+                        </div>
+                         <div class="input-group mb-3">
+                            <span class="input-group-text"><i class="fas fa-layer-group"></i></span>
+                            <input type="number" class="form-control level-input" placeholder="Enter Level (1-100)" min="1" max="100">
+                        </div>
+                        <div class="input-group mb-3">
+                            <span class="input-group-text"><i class="fas fa-key"></i> Vault %</span>
+                            <input type="number" class="form-control vault-percentage-input" placeholder="0-100" min="0" max="100">
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <button class="btn btn-primary" data-action="simulate" data-chest-type="adventure_Pirate" data-event-type="Pirate"><i class="fas fa-play me-1"></i>Open</button>
+                            <button class="btn btn-danger" data-action="clear"><i class="fas fa-trash me-1"></i>Clear</button>
+                            <button class="btn btn-info toggle-btn" data-action="toggle-history" style="display: none;"><i class="fas fa-history me-1"></i>Toggle History</button>
+                            <button class="btn btn-secondary" data-action="xp-calculator"><i class="fas fa-star me-1"></i>Calc. XP</button>
+                            <button class="btn btn-warning" data-action="local-search"><i class="fas fa-search me-1"></i>Find Item</button>
+                            <button class="btn btn-danger" data-action="toggle-what-if"><i class="fas fa-question-circle me-1"></i>What If</button>
+                        </div>
+                        <div class="results-container"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4">
+                <div class="card chest-card h-100" data-card-id="event_SeaPort">
+                    <div class="chest-header">
+                        <h5 class="mb-1"><img src="./src/SeaportChestIcon.png" class="me-2" style="width: 60px; height: 60px;">Event: Seaport</h5>
+                        <div class="d-flex justify-content-between">
+                            <small class="counter">Opened: 0</small>
+                            <small class="xp-counter">Total XP: 0</small>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text"><i class="fas fa-seedling"></i></span>
+                            <input type="number" class="seed-input form-control" placeholder="Enter seed ChestId 4 ">
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <button class="btn btn-primary" data-action="simulate" data-chest-type="event" data-event-type="SeaPort"><i class="fas fa-play me-1"></i>Open</button>
+                            <button class="btn btn-danger" data-action="clear"><i class="fas fa-trash me-1"></i>Clear</button>
+                            <button class="btn btn-info toggle-btn" data-action="toggle-history" style="display: none;"><i class="fas fa-history me-1"></i>Toggle History</button>
+                            <button class="btn btn-secondary" data-action="xp-calculator"><i class="fas fa-star me-1"></i>Calc. XP</button>
+                            <button class="btn btn-warning" data-action="local-search"><i class="fas fa-search me-1"></i>Find Item</button>
+                        </div>
+                        <div class="results-container"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-12 col-md-4">
+                <div class="card chest-card h-100" data-card-id="event_Space">
+                    <div class="chest-header">
+                        <h5 class="mb-1"><img src="./src/SpaceChestIcon.png" class="me-2" style="width: 60px; height: 60px;">Event: Space</h5>
+                        <div class="d-flex justify-content-between">
+                            <small class="counter">Opened: 0</small>
+                            <small class="xp-counter">Total XP: 0</small>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text"><i class="fas fa-seedling"></i></span>
+                            <input type="number" class="seed-input form-control" placeholder="Enter seed ChestId 3 ">
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <button class="btn btn-primary" data-action="simulate" data-chest-type="event" data-event-type="Space"><i class="fas fa-play me-1"></i>Open</button>
+                            <button class="btn btn-danger" data-action="clear"><i class="fas fa-trash me-1"></i>Clear</button>
+                            <button class="btn btn-info toggle-btn" data-action="toggle-history" style="display: none;"><i class="fas fa-history me-1"></i>Toggle History</button>
+                            <button class="btn btn-secondary" data-action="xp-calculator"><i class="fas fa-star me-1"></i>Calc. XP</button>
+                            <button class="btn btn-warning" data-action="local-search"><i class="fas fa-search me-1"></i>Find Item</button>
+                        </div>
+                        <div class="results-container"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4">
+                <div class="card chest-card h-100" data-card-id="event_Mine">
+                    <div class="chest-header">
+                        <h5 class="mb-1"><img src="./src/MineChestIcon.png" class="me-2" style="width: 60px; height: 60px;">Event: Mine</h5>
+                        <div class="d-flex justify-content-between">
+                            <small class="counter">Opened: 0</small>
+                            <small class="xp-counter">Total XP: 0</small>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text"><i class="fas fa-seedling"></i></span>
+                            <input type="number" class="seed-input form-control" placeholder="Enter seed ChestId 2 ">
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <button class="btn btn-primary" data-action="simulate" data-chest-type="event" data-event-type="Mine"><i class="fas fa-play me-1"></i>Open</button>
+                            <button class="btn btn-danger" data-action="clear"><i class="fas fa-trash me-1"></i>Clear</button>
+                            <button class="btn btn-info toggle-btn" data-action="toggle-history" style="display: none;"><i class="fas fa-history me-1"></i>Toggle History</button>
+                            <button class="btn btn-secondary" data-action="xp-calculator"><i class="fas fa-star me-1"></i>Calc. XP</button>
+                            <button class="btn btn-warning" data-action="local-search"><i class="fas fa-search me-1"></i>Find Item</button>
+                        </div>
+                        <div class="results-container"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4">
+                <div class="card chest-card h-100" data-card-id="event_MiddleAges">
+                    <div class="chest-header">
+                        <h5 class="mb-1"><img src="./src/MiddleAgesChestIcon.png" class="me-2" style="width: 60px; height: 60px;">Event: Middle Ages</h5>
+                        <div class="d-flex justify-content-between">
+                            <small class="counter">Opened: 0</small>
+                            <small class="xp-counter">Total XP: 0</small>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text"><i class="fas fa-seedling"></i></span>
+                            <input type="number" class="seed-input form-control" placeholder="Enter seed ChestId 5 ">
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <button class="btn btn-primary" data-action="simulate" data-chest-type="event" data-event-type="MiddleAges"><i class="fas fa-play me-1"></i>Open</button>
+                            <button class="btn btn-danger" data-action="clear"><i class="fas fa-trash me-1"></i>Clear</button>
+                            <button class="btn btn-info toggle-btn" data-action="toggle-history" style="display: none;"><i class="fas fa-history me-1"></i>Toggle History</button>
+                            <button class="btn btn-secondary" data-action="xp-calculator"><i class="fas fa-star me-1"></i>Calc. XP</button>
+                            <button class="btn btn-warning" data-action="local-search"><i class="fas fa-search me-1"></i>Find Item</button>
+                        </div>
+                        <div class="results-container"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4">
+                <div class="card chest-card h-100" data-card-id="event_Alchemist">
+                    <div class="chest-header">
+                        <h5 class="mb-1"><img src="./src/PotionChest.png" class="me-2" style="width: 60px; height: 60px;">Event: Potion</h5>
+                        <p class="danger" style="font-size: 0.8em; color: #ffc107;">THIS ONE ONLY WORKS IN THE EATVENTURE APP WITHOUT INTERNET CONNECTION AT THE  OF THE OPENING (little bug of the game) 🙃</p>
+                        <div class="d-flex justify-content-between">
+                            <small class="counter">Opened: 0</small>
+                            <small class="xp-counter">Total XP: 0</small>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text"><i class="fas fa-seedling"></i></span>
+                            <input type="number" class="seed-input form-control" placeholder="Enter seed ChestId 15 ">
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <button class="btn btn-primary" data-action="simulate" data-chest-type="event" data-event-type="Alchemist" ><i class="fas fa-play me-1"></i>Open</button>
+                            <button class="btn btn-danger" data-action="clear"><i class="fas fa-trash me-1"></i>Clear</button>
+                            <button class="btn btn-info toggle-btn" data-action="toggle-history" style="display: none;"><i class="fas fa-history me-1"></i>Toggle History</button>
+                            <button class="btn btn-secondary" data-action="xp-calculator"><i class="fas fa-star me-1"></i>Calc. XP</button>
+                            <button class="btn btn-warning" data-action="local-search"><i class="fas fa-search me-1"></i>Find Item</button>
+                        </div>
+                        <div class="results-container"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4">
+                <div class="card chest-card h-100" data-card-id="egg_Rare">
+                    <div class="chest-header">
+                        <h5 class="mb-1"><img src="./src/Pet_Egg_Rare.png" class="me-2" style="width: 60px; height: 60px;">Egg: Rare</h5>
+                        <div class="d-flex justify-content-between">
+                            <small class="counter">Opened: 0</small>
+                            <small class="xp-counter">Total XP: 0</small>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text"><i class="fas fa-seedling"></i></span>
+                            <input type="number" class="seed-input form-control" placeholder="Enter seed EggRarity 1 ">
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <button class="btn btn-primary" data-action="simulate" data-chest-type="egg" data-rarity="Rare"><i class="fas fa-play me-1"></i>Open</button>
+                            <button class="btn btn-danger" data-action="clear"><i class="fas fa-trash me-1"></i>Clear</button>
+                            <button class="btn btn-info toggle-btn" data-action="toggle-history" style="display: none;"><i class="fas fa-history me-1"></i>Toggle History</button>
+                        </div>
+                        <div class="results-container"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4">
+                <div class="card chest-card h-100" data-card-id="egg_Epic">
+                    <div class="chest-header">
+                        <h5 class="mb-1"><img src="./src/Pet_Egg_Epic.png" class="me-2" style="width: 60px; height: 60px;">Egg: Epic</h5>
+                        <div class="d-flex justify-content-between">
+                            <small class="counter">Opened: 0</small>
+                            <small class="xp-counter">Total XP: 0</small>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text"><i class="fas fa-seedling"></i></span>
+                            <input type="number" class="seed-input form-control" placeholder="Enter seed EggRarity 2 ">
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <button class="btn btn-primary" data-action="simulate" data-chest-type="egg" data-rarity="Epic"><i class="fas fa-play me-1"></i>Open</button>
+                            <button class="btn btn-danger" data-action="clear"><i class="fas fa-trash me-1"></i>Clear</button>
+                            <button class="btn btn-info toggle-btn" data-action="toggle-history" style="display: none;"><i class="fas fa-history me-1"></i>Toggle History</button>
+                        </div>
+                        <div class="results-container"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4">
+                <div class="card chest-card h-100" data-card-id="egg_Legendary">
+                    <div class="chest-header">
+                        <h5 class="mb-1"><img src="./src/Pet_Egg_Legendary.png" class="me-2" style="width: 60px; height: 60px;">Egg: Legendary</h5>
+                        <div class="d-flex justify-content-between">
+                            <small class="counter">Opened: 0</small>
+                            <small class="xp-counter">Total XP: 0</small>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text"><i class="fas fa-seedling"></i></span>
+                            <input type="number" class="seed-input form-control" placeholder="Enter seed EggRarity 3 ">
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <button class="btn btn-primary" data-action="simulate" data-chest-type="egg" data-rarity="Legendary"><i class="fas fa-play me-1"></i>Open</button>
+                            <button class="btn btn-danger" data-action="clear"><i class="fas fa-trash me-1"></i>Clear</button>
+                            <button class="btn btn-info toggle-btn" data-action="toggle-history" style="display: none;"><i class="fas fa-history me-1"></i>Toggle History</button>
+                        </div>
+                        <div class="results-container"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4">
+                <div class="card chest-card h-100" data-card-id="egg_Ultimate">
+                    <div class="chest-header">
+                        <h5 class="mb-1"><img src="./src/Pet_Egg_Ultimate.png" class="me-2" style="width: 60px; height: 60px;">Egg: Ultimate</h5>
+                        <div class="d-flex justify-content-between">
+                            <small class="counter">Opened: 0</small>
+                            <small class="xp-counter">Total XP: 0</small>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text"><i class="fas fa-seedling"></i></span>
+                            <input type="number" class="seed-input form-control" placeholder="Enter seed EggRarity 4 ">
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <button class="btn btn-primary" data-action="simulate" data-chest-type="egg" data-rarity="Ultimate"><i class="fas fa-play me-1"></i>Open</button>
+                            <button class="btn btn-danger" data-action="clear"><i class="fas fa-trash me-1"></i>Clear</button>
+                            <button class="btn btn-info toggle-btn" data-action="toggle-history" style="display: none;"><i class="fas fa-history me-1"></i>Toggle History</button>
+                        </div>
+                        <div class="results-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="global-actions-container" style="pointer-events: none;">
+        <button class="global-search-btn"  style="pointer-events: auto;" onclick="openGlobalSearch()">
+            <i class="fas fa-search"></i>
+        </button>
+        <a class="btn btn-warning support-btn global-support-btn d-flex"  style="pointer-events: auto;"  href="https://buymeacoffee.com/1vcian" target="_blank">
+            <b>☕ Support the project, buy me a coffee!</b>
+        </a>
+    </div>
+
+    <div class="search-overlay" id="petFoodModal">
+        <div class="search-modal">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="mb-0"><img src="./src/PetFood.png" style="width: 40px; margin-right: 10px; image-rendering: crisp-edges;">Pet Food Calculator</h4>
+                <button class="btn-close btn-close-white" onclick="document.getElementById('petFoodModal').style.display = 'none';"></button>
+            </div>
+            <div class="mb-3">
+                <label for="petFoodAmount" class="form-label">How much Pet Food do you need?</label>
+                <input type="number" class="form-control" id="petFoodAmount" placeholder="Enter amount...">
+            </div>
+            <button class="btn btn-primary w-100" id="calculatePetFoodBtn">Calculate</button>
+            <div id="petFoodResults" class="mt-3" style="display: none;">
+                <div id="petFoodResultsContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="search-overlay" id="xpModal">
+        <div class="search-modal">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="mb-0" id="xpModalTitle"><i class="fas fa-star me-2 text-warning"></i>XP Calculator</h4>
+                <button class="btn-close btn-close-white" onclick="document.getElementById('xpModal').style.display = 'none';"></button>
+            </div>
+            <div class="mb-3">
+                <label for="xpAmount" class="form-label">How much XP do you want to reach?</label>
+                <input type="number" class="form-control" id="xpAmount" placeholder="Enter target XP...">
+            </div>
+            <button class="btn btn-primary w-100" id="calculateXpBtn">Calculate</button>
+            <div id="xpResults" class="mt-3" style="display: none;">
+                <div id="xpResultsContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="search-overlay" id="searchOverlay">
+        <div class="search-modal">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 id="searchModalTitle">Search for Item</h4>
+                <button class="btn-close btn-close-white" onclick="closeSearchModal()"></button>
+            </div>
+            <div class="mb-3">
+                <input type="text" class="form-control" id="searchInput" placeholder="Type to search items...">
+            </div>
+            <div class="row" id="itemGrid" style="max-height: 300px; overflow-y: auto;"></div>
+            <div id="searchResults" class="mt-3" style="display: none;">
+                <h5>Search Results:</h5>
+                <div id="searchResultsContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.css" integrity="sha512-3pIirOrwegjM6erE5gPSwkUzO+3cTjpnV9lexlNZqvupR64iZBnOOTiiLPb9M36zpMScbmUNIcHUqKD47M719g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js" integrity="sha512-VEd+nq25CkR676O+pLBnDW09R7VQX9Mdiij052gVCp5yVH3jGtH70Ho/UUv4mJDsEdTvqRCFZg0NKGiojGnUCw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="unity-random.js"></script>
+    <script src="app.js"></script> 
+    <!-- <script src="app.obfuscated.js"></script> -->
+    <script>
+        //cat $(ls -t savegame*.json | head -n 1) | grep -o '{[^}]*"Seed":[^}]*}'
+    </script>
+    </div>
+</body>
+</html>
