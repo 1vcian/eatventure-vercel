@@ -210,7 +210,7 @@ const toggleFeatures = (isLocked) => {
         window.addEventListener('scroll', updateUserActivity, { passive: true });
 
         // 3. Avvia il timer di controllo PERIODICO solo dopo aver ottenuto lo stato iniziale
-        setInterval(checkUserStatusPeriodically, 45 * 1000); // Controlla ogni 30 secondi
+        setInterval(checkUserStatusPeriodically, 60 * 1000); // Controlla ogni 30 secondi
     };
 
     // Avvia tutto
