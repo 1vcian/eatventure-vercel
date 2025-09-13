@@ -1,0 +1,8 @@
+# File sorgente JavaScript da non pubblicare
+app.js
+
+# Script di build che non serve in produzione
+obfuscate.js
+
+# Dipendenze che vengono installate sul server ma non devono essere pubbliche
+node_modules
