@@ -218,53 +218,6 @@ const toggleFeatures = (isLocked) => {
 
 
 
-    // Controlla lo stato del login all'avvio
-   try {
-        const response = await fetch('/api/status');
-        const data = await response.json();
-
-        const loggedOutView = document.getElementById('view-logged-out');
-        const loggedInView = document.getElementById('view-logged-in');
-        const toolContainer = document.getElementById('tool-container');
-        const bannedOverlay = document.getElementById('view-banned');
-
-        if (data.isLoggedIn) {
-
-            document.getElementById('user-username').textContent = data.user.username;
-            document.getElementById('user-avatar').src=data.user.avatar
-            if (data.isMember) {
-                // Utente loggato MA membro del server bloccato
-                //toolContainer.style.display = 'none';
-                loggedOutView.style.display = 'none';
-                loggedInView.style.display = 'block';
-                bannedOverlay.style.display = 'flex'; // Mostra il messaggio di blocco
-                  toggleFeatures(true); 
-                  document.getElementById('lock-message').style.display = 'block';
-                  document.getElementById('unlock-message').style.display = 'none';
-            
-            } else {
-                // Utente loggato e autorizzato
-                loggedOutView.style.display = 'none';
-                loggedInView.style.display = 'block';
-                bannedOverlay.style.display = 'none';
-                toggleFeatures(false); // Sblocca tutto
-                       document.getElementById('lock-message').style.display = 'none';
-                  document.getElementById('unlock-message').style.display = 'block';
-            }
-        } else {
-            // Utente non loggato
-            loggedOutView.style.display = 'block';
-            loggedInView.style.display = 'none';
-            bannedOverlay.style.display = 'none';
-            toggleFeatures(true); // Blocca le feature premium
-                   document.getElementById('lock-message').style.display = 'none';
-                  document.getElementById('unlock-message').style.display = 'none';
-        }
-    } catch (error) {
-        console.error('Error checking login status:', error);
-        toggleFeatures(true); // In caso di errore, blocca tutto per sicurezza
-    }
-
 document.getElementById('tool-container').addEventListener('click', (event) => {
     // If the user clicks our overlay...
     if (event.target.classList.contains('login-overlay')) {
