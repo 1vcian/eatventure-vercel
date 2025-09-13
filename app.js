@@ -134,6 +134,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     
 
     
+
+    function saveState() {
+    // Questa funzione verrà sostituita dalla logica del database più avanti.
+    // Per ora, possiamo usare localStorage come prima.
+    const stateToSave = { cards: cardStates, eggs: globalEggCounts };
+    localStorage.setItem(STATE_KEY, JSON.stringify(stateToSave));
+}
+
+function loadState() {
+    const saved = localStorage.getItem(STATE_KEY); 
+    if (saved) {
+        const parsed = JSON.parse(saved);
+        cardStates = parsed.cards || {};
+        globalEggCounts = parsed.eggs || { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Ultimate: 0 };
+    } else {
+        cardStates = {};
+        globalEggCounts = { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Ultimate: 0 };
+    }
+}
+
 // Game Data
 const LOOT_TABLES = {
     small: { title: 'Small Box', itemsPerChest: 2, totalWeight: 10025, table: [ { result: { type: 'Equipment', rarity: 'Common' }, weight: 6000 }, { result: { type: 'Equipment', rarity: 'Rare' }, weight: 1200 }, { result: { type: 'Equipment', rarity: 'Epic' }, weight: 300 }, { result: { type: 'Pet Egg', rarity: 'Common' }, weight: 100 }, { result: { type: 'Pet Egg', rarity: 'Rare' }, weight: 25 }, { result: { type: 'Pet Food', rarity: 'None' }, weight: 2400 }, ] },
