@@ -15,6 +15,6 @@
   },
   "scripts": {
     "obfuscate": "node obfuscate.js",
-    "build": "rimraf public && mkdirp public && npm run obfuscate && cp-cli index.html unity-random.js public && cp-cli src public/src"
+    "build": "rimraf public && mkdirp public && npm run obfuscate && cp-cli index.html public && cp-cli unity-random.js public && cp-cli src public/src"
   }
 }
