@@ -34,7 +34,9 @@ const obfuscationOptions = {
     stringArrayWrappersParametersMaxCount: 5,
     stringArrayWrappersType: 'function',
     transformObjectKeys: true,
-    unicodeEscapeSequence: false
+    unicodeEscapeSequence: false,
+    domainLock: ['eatventure-loot-predictor.vercel.app'],
+    domainLockRedirectUrl:'https://www.eatventure-loot-predictor.vercel.app'
 };
 
 // Offusca il codice
