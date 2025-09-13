@@ -128,17 +128,22 @@ const toggleFeatures = (isLocked) => {
         const loggedOutView = document.getElementById('user-logged-out');
         const loggedInView = document.getElementById('user-logged-in');
         const toolContainer = document.getElementById('tool-container');
-        const bannedOverlay = document.getElementById('banned-user-overlay');
+        const bannedOverlay = document.getElementById('view-banned');
 
         if (data.isLoggedIn) {
             if (data.isMember) {
                 // Utente loggato MA membro del server bloccato
-                toolContainer.style.display = 'none';
+                //toolContainer.style.display = 'none';
+                loggedOutView.style.display = 'none';
+                loggedInView.style.display = 'block';
                 bannedOverlay.style.display = 'flex'; // Mostra il messaggio di blocco
+                  toggleFeatures(true); 
+            
             } else {
                 // Utente loggato e autorizzato
                 loggedOutView.style.display = 'none';
                 loggedInView.style.display = 'block';
+                bannedOverlay.style.display = '';
                 toggleFeatures(false); // Sblocca tutto
             }
         } else {

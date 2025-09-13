@@ -427,6 +427,37 @@
     font-size: 1.1rem;
     box-shadow: 0 4px 15px rgba(88, 101, 242, 0.3);
 }
+/* Stili per il banner di accesso limitato */
+.banned-view-card {
+    background: linear-gradient(135deg, rgba(255, 107, 107, 0.1), rgba(224, 86, 122, 0.2));
+    border: 1px solid rgba(255, 107, 107, 0.3);
+    backdrop-filter: blur(10px);
+    color: #f8d7da; /* Soft red text color */
+    padding: 2rem;
+    border-radius: 1rem;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.37);
+}
+
+.banned-view-card .icon {
+    font-size: 3rem;
+    color: #e0567a;
+    margin-bottom: 1rem;
+    text-shadow: 0 0 15px rgba(224, 86, 122, 0.5);
+}
+
+.banned-view-card h4 {
+    color: #fff;
+    font-weight: bold;
+}
+
+.banned-view-card p {
+    color: #f8d7da;
+    font-size: 1rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
     </style>
 </head>
 
@@ -611,11 +642,17 @@
         <button id="logout-button-welcome" class="btn btn-outline-light ms-3">Logout</button>
     </div>
 
-    <div id="view-banned" style="display: none;" class="auth-card text-center text-warning p-4 rounded-4">
-        <h4 class="fw-bold">Access Restricted</h4>
-        <p>Your Discord account is associated with a server that prohibits the use of this tool.</p>
-        <p class="small mb-3">Please create a new Discord account or leave the conflicting server to gain access.</p>
-        <button id="logout-button-banned" class="btn btn-danger mt-2">Logout</button>
+ <div id="view-banned" style="display: none;">
+        <div class="banned-view-card">
+            <div class="icon">
+                <i class="fas fa-shield-halved"></i>
+            </div>
+            <h4 class="mb-3">Full Access Could Not Be Unlocked</h4>
+            <p class="mb-4">
+                We're sorry, but we were unable to unlock all features. Your Discord account is a member of an "Eatventure" server that considers this tool a violation of their Terms of Service.
+            </p>
+            <button id="logout-button-banned" class="btn btn-danger">Logout</button>
+        </div>
     </div>
 </div>
 
