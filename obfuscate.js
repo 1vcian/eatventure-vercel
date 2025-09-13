@@ -36,7 +36,7 @@ let obfuscationOptions = {
     transformObjectKeys: true,
     unicodeEscapeSequence: false,
     domainLock: ['eatventure-loot-predictor.vercel.app'],
-    domainLockRedirectUrl:'https://www.eatventure-loot-predictor.vercel.app'
+    domainLockRedirectUrl:'https://eatventure-loot-predictor.vercel.app'
 };
 
 // Offusca il codice
