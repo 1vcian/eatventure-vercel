@@ -26,6 +26,14 @@ const saveStateToDB = debounce(async () => {
     }
 }, 1000); // Salva 1 secondo dopo l'ultima modifica
 
+function saveState() { 
+    const stateToSave = {
+        cards: cardStates,
+        eggs: globalEggCounts
+    };
+    localStorage.setItem(STATE_KEY, JSON.stringify(stateToSave)); 
+}
+
 async function loadStateFromDB() {
     if (!authData.isLoggedIn || authData.isMember) return; // Non caricare se non loggato o bannato
     try {
@@ -1015,7 +1023,7 @@ document.getElementById('tool-container').addEventListener('click', (event) => {
         if (input.tagName === 'INPUT' && input.type === 'number') {
             const rarity = input.id.split('-')[2].charAt(0).toUpperCase() + input.id.split('-')[2].slice(1);
             globalEggCounts[rarity] = parseInt(input.value, 10) || 0;
-            saveStateToDB();
+            saveState();
             updateAndDisplayEggCounters(); // Re-calculate and display immediately
         }
     });
@@ -1024,7 +1032,7 @@ document.getElementById('tool-container').addEventListener('click', (event) => {
         input.addEventListener('keyup', (event) => {
             const card = event.target.closest('.card'); if (!card) return;
             const cardId = card.dataset.cardId; const seedValue = parseInt(event.target.value, 10);
-            if (!isNaN(seedValue)) { if (!cardStates[cardId]) cardStates[cardId] = { initialSeed: seedValue, history: [] }; else cardStates[cardId].initialSeed = seedValue; saveStateToDB(); }
+            if (!isNaN(seedValue)) { if (!cardStates[cardId]) cardStates[cardId] = { initialSeed: seedValue, history: [] }; else cardStates[cardId].initialSeed = seedValue; saveState(); }
         });
     });
     
@@ -1034,7 +1042,7 @@ document.getElementById('tool-container').addEventListener('click', (event) => {
             if (!cardStates[cardId]) cardStates[cardId] = { initialSeed: null, history: [] };
             if (levelInput) cardStates[cardId].level = levelInput.value;
             if (vaultInput) cardStates[cardId].vaultPercentage = vaultInput.value;
-            saveStateToDB();
+            saveState();
             renderCard(cardId); 
         };
         levelInput?.addEventListener('keyup', saveAdventureState);
@@ -1052,15 +1060,15 @@ document.getElementById('tool-container').addEventListener('click', (event) => {
 
         if (action === 'clear') {
             delete cardStates[cardId];
-            saveStateToDB();
+            saveState();
             renderCard(cardId);
             return;
         }
-        if (action === 'toggle-history') { if (cardStates[cardId]) { cardStates[cardId].isHistoryVisible = !cardStates[cardId].isHistoryVisible; saveStateToDB(); renderCard(cardId); } return; }
+        if (action === 'toggle-history') { if (cardStates[cardId]) { cardStates[cardId].isHistoryVisible = !cardStates[cardId].isHistoryVisible; saveState(); renderCard(cardId); } return; }
         if (action === 'toggle-what-if') { 
             if (cardStates[cardId]) { 
                 cardStates[cardId].isWhatIfVisible = !cardStates[cardId].isWhatIfVisible; 
-                saveStateToDB(); 
+                saveState(); 
                 renderCard(cardId); 
             } 
             return; 
@@ -1089,7 +1097,7 @@ document.getElementById('tool-container').addEventListener('click', (event) => {
                 vaultPercentage = parseInt(vaultInput.value, 10) || 0;
                 if(vaultPercentage>35) { toastr["error"]("Please enter a valid vault percentage (0-35) for the search.", "Error"); return; }
             }
-            state.history.push({ type: chestType, eventType, rarity, level, vaultPercentage }); saveStateToDB(); renderCard(cardId);
+            state.history.push({ type: chestType, eventType, rarity, level, vaultPercentage }); saveState(); renderCard(cardId);
         }
     });
 
