@@ -125,8 +125,8 @@ const toggleFeatures = (isLocked) => {
         const response = await fetch('/api/status');
         const data = await response.json();
 
-        const loggedOutView = document.getElementById('user-logged-out');
-        const loggedInView = document.getElementById('user-logged-in');
+        const loggedOutView = document.getElementById('view-logged-out');
+        const loggedInView = document.getElementById('view-logged-in');
         const toolContainer = document.getElementById('tool-container');
         const bannedOverlay = document.getElementById('view-banned');
 
@@ -137,7 +137,7 @@ const toggleFeatures = (isLocked) => {
                 loggedOutView.style.display = 'none';
                 loggedInView.style.display = 'block';
                 bannedOverlay.style.display = 'flex'; // Mostra il messaggio di blocco
-                  toggleFeatures(true); 
+                
             
             } else {
                 // Utente loggato e autorizzato
