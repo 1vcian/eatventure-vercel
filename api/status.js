@@ -62,7 +62,7 @@ export default async function handler(req, res) {
 
 
   
-
+  console.log("status ",sessionData.user.username)
 
     // --- LOGICA DI AGGIORNAMENTO FORZATO ---
     if (req.query['force-refresh'] === 'true') {
@@ -80,7 +80,7 @@ export default async function handler(req, res) {
             const isWhitelisted = await kv.get(`user-override:${sessionData.user.id}`);
             const isExplicitlyBanned = await kv.get(`user-ban:${sessionData.user.id}`);
             const finalIsMemberStatus = isExplicitlyBanned || (isMemberNow && !isWhitelisted);
-            console.log("status ",sessionData.user.username)
+          
 
             if (finalIsMemberStatus !== sessionData.isMember) {
                 sessionData.isMember = finalIsMemberStatus; 
