@@ -90,7 +90,7 @@ export default async function handler(req, res) {
                 const newCookie = serialize('user_session', signedSession, {
                     httpOnly: true,
                     secure: process.env.NODE_ENV !== 'development',
-                    maxAge: 60 * 30, // 30 minutes
+                    maxAge: 60 * 60 * 24 * 7, // 1 settimana
                     path: '/',
                     sameSite: 'lax'
                 });
