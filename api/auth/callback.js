@@ -16,6 +16,7 @@ export default async function handler(req, res) {
     const { code } = req.query;
     if (!code) { 
         // Aggiungiamo un return anche qui per buona misura
+        res.redirect('/');
         return res.status(400).send('Errore: Codice di autorizzazione mancante.'); // <-- AGGIUNTO
     }
 
