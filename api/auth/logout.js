@@ -2,14 +2,14 @@
 import { serialize } from 'cookie';
 
 export default function handler(req, res) {
-  // Crea un cookie scaduto per cancellarlo
+  // Crea un cookie con valore vuoto e maxAge negativo per forzarne la cancellazione
   const cookie = serialize('user_session', '', {
     httpOnly: true,
     secure: process.env.NODE_ENV !== 'development',
-    expires: new Date(0), // Data nel passato
+    maxAge: -1, // <-- QUESTA È LA CORREZIONE FONDAMENTALE
     path: '/',
   });
 
   res.setHeader('Set-Cookie', cookie);
-  res.status(200).json({ message: 'Logged out' });
+  res.status(200).json({ message: 'Logged out successfully' });
 }

@@ -131,6 +131,9 @@ const toggleFeatures = (isLocked) => {
         const bannedOverlay = document.getElementById('view-banned');
 
         if (data.isLoggedIn) {
+
+            document.getElementById('user-username').textContent = data.user.username;
+            document.getElementById('user-avatar').src=data.user.avatar
             if (data.isMember) {
                 // Utente loggato MA membro del server bloccato
                 //toolContainer.style.display = 'none';
