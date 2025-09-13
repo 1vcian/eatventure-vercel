@@ -18,7 +18,7 @@ const obfuscationOptions = {
     identifierNamesGenerator: 'hexadecimal',
     log: false,
     numbersToExpressions: true,
-    renameGlobals: true,
+    renameGlobals: false,
     selfDefending: true,
     simplify: true,
     splitStrings: true,
