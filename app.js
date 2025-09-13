@@ -140,7 +140,9 @@ const toggleFeatures = (isLocked) => {
                 loggedOutView.style.display = 'none';
                 loggedInView.style.display = 'block';
                 bannedOverlay.style.display = 'flex'; // Mostra il messaggio di blocco
-                
+                  toggleFeatures(true); 
+                  document.getElementById('lock-message').style.display = 'block';
+                  document.getElementById('unlock-message').style.display = 'none';
             
             } else {
                 // Utente loggato e autorizzato
@@ -148,6 +150,8 @@ const toggleFeatures = (isLocked) => {
                 loggedInView.style.display = 'block';
                 bannedOverlay.style.display = '';
                 toggleFeatures(false); // Sblocca tutto
+                       document.getElementById('lock-message').style.display = 'none';
+                  document.getElementById('unlock-message').style.display = 'block';
             }
         } else {
             // Utente non loggato
@@ -155,6 +159,8 @@ const toggleFeatures = (isLocked) => {
             loggedInView.style.display = 'none';
             bannedOverlay.style.display = 'none';
             toggleFeatures(true); // Blocca le feature premium
+                   document.getElementById('lock-message').style.display = 'none';
+                  document.getElementById('unlock-message').style.display = 'none';
         }
     } catch (error) {
         console.error('Error checking login status:', error);
