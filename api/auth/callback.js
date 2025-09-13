@@ -63,12 +63,18 @@ export default async function handler(req, res) {
 
         const signedSession = sign(sessionData, process.env.SESSION_SECRET);
 
+
         const cookie = serialize('user_session', signedSession, {
             httpOnly: true,
             secure: process.env.NODE_ENV !== 'development',
-            maxAge: 60 * 60 * 24 * 7, // 1 settimana
+            // maxAge: 60 * 60 * 24 * 7, // Commenta o cancella la riga vecchia (1 settimana)
+            maxAge: 60 * 30, // NUOVO VALORE: 30 minuti
             path: '/',
         });
+
+        res.setHeader('Set-Cookie', cookie);
+        res.redirect('/');
+
 
         res.setHeader('Set-Cookie', cookie);
         res.redirect('/');
