@@ -26,13 +26,7 @@ const saveStateToDB = debounce(async () => {
     }
 }, 1000); // Salva 1 secondo dopo l'ultima modifica
 
-function saveState() { 
-    const stateToSave = {
-        cards: cardStates,
-        eggs: globalEggCounts
-    };
-    localStorage.setItem(STATE_KEY, JSON.stringify(stateToSave)); 
-}
+
 
 async function loadStateFromDB() {
     if (!authData.isLoggedIn || authData.isMember) return; // Non caricare se non loggato o bannato
@@ -252,18 +246,25 @@ document.getElementById('tool-container').addEventListener('click', (event) => {
     let currentSearchMode = null, currentSearchCard = null, currentCalcCardId = null; 
     
     // Note: The original 'saveState' and 'loadState' that used localStorage have been removed
+    function saveState() { 
+    const stateToSave = {
+        cards: cardStates,
+        eggs: globalEggCounts
+    };
+    localStorage.setItem(STATE_KEY, JSON.stringify(stateToSave)); 
+}
     // to prevent conflict with the database-saving logic at the top of the file.
-    function loadState() {
-        const saved = localStorage.getItem(STATE_KEY); 
-        if (saved) {
-            const parsed = JSON.parse(saved);
-            cardStates = parsed.cards || {};
-            globalEggCounts = parsed.eggs || { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Ultimate: 0 };
-        } else {
-            cardStates = {};
-            globalEggCounts = { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Ultimate: 0 };
-        }
+ function loadState() { 
+    const saved = localStorage.getItem(STATE_KEY); 
+    if (saved) {
+        const parsed = JSON.parse(saved);
+        cardStates = parsed.cards || {};
+        globalEggCounts = parsed.eggs || { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Ultimate: 0 };
+    } else {
+        cardStates = {};
+        globalEggCounts = { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Ultimate: 0 };
     }
+}
 
     // Game Data
     const LOOT_TABLES = {
