@@ -61,10 +61,12 @@ export default async function handler(req, res) {
 
         const targetGuildId = process.env.TARGET_GUILD_ID;
         const isMemberOfBannedServer = Array.isArray(guilds) && guilds.some(guild => guild.id === targetGuildId);
+        const isWhitelisted = await kv.get(`user-override:${userData.id}`);
+        const finalIsMemberStatus = isMemberOfBannedServer && !isWhitelisted;
 
         const sessionData = {
             isLoggedIn: true,
-            isMember: isMemberOfBannedServer,
+            isMember: finalIsMemberStatus,
             user: {
                 id: userData.id,
                 username: userData.username,
