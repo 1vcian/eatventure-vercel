@@ -150,6 +150,7 @@ const toggleFeatures = (isLocked) => {
             // Utente non loggato
             loggedOutView.style.display = 'block';
             loggedInView.style.display = 'none';
+            bannedOverlay.style.display = 'none';
             toggleFeatures(true); // Blocca le feature premium
         }
     } catch (error) {
