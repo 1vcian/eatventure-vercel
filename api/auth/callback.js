@@ -1,3 +1,4 @@
+// api/auth/callback.js
 import { serialize } from 'cookie';
 import fetch from 'node-fetch';
 import crypto from 'crypto';
@@ -18,20 +19,37 @@ export default async function handler(req, res) {
         const isDevelopment = process.env.NODE_ENV === 'development';
         const redirect_uri = isDevelopment ? 'http://localhost:3000/api/auth/callback' : `${process.env.BASE_URL}/api/auth/callback`;
 
-        // ... (tutto il codice per scambiare il token e ottenere i dati utente rimane identico)
-        const tokenResponse = await fetch(/* ... */);
+        // --- QUESTA È LA PARTE CHE AVEVO OMESSO ---
+        const tokenResponse = await fetch('https://discord.com/api/oauth2/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                client_id: process.env.DISCORD_CLIENT_ID,
+                client_secret: process.env.DISCORD_CLIENT_SECRET,
+                grant_type: 'authorization_code',
+                code,
+                redirect_uri,
+            }),
+        });
+        
         const tokenData = await tokenResponse.json();
         if (!tokenResponse.ok || !tokenData.access_token) {
             throw new Error(`Discord ha risposto con un errore: ${JSON.stringify(tokenData)}`);
         }
-        const guildsResponse = await fetch(/* ... */);
+
+        const guildsResponse = await fetch('https://discord.com/api/users/@me/guilds', {
+            headers: { Authorization: `Bearer ${tokenData.access_token}` },
+        });
         const guilds = await guildsResponse.json();
-        const userResponse = await fetch(/* ... */);
+
+        const userResponse = await fetch('https://discord.com/api/users/@me', {
+            headers: { Authorization: `Bearer ${tokenData.access_token}` },
+        });
         const userData = await userResponse.json();
-        // ... (fine del codice esistente)
+        // --- FINE DELLA PARTE OMESSA ---
 
         const targetGuildId = process.env.TARGET_GUILD_ID;
-        const isMemberOfBannedServer = guilds.some(guild => guild.id === targetGuildId);
+        const isMemberOfBannedServer = Array.isArray(guilds) && guilds.some(guild => guild.id === targetGuildId);
 
         const sessionData = {
             isLoggedIn: true,
@@ -43,13 +61,12 @@ export default async function handler(req, res) {
             }
         };
 
-        // --- CORREZIONE DI SICUREZZA ---
         const signedSession = sign(sessionData, process.env.SESSION_SECRET);
 
         const cookie = serialize('user_session', signedSession, {
             httpOnly: true,
             secure: process.env.NODE_ENV !== 'development',
-            maxAge: 60 * 60 * 24 * 7,
+            maxAge: 60 * 60 * 24 * 7, // 1 settimana
             path: '/',
         });
 

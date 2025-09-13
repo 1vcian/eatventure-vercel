@@ -22,23 +22,5 @@ export default function handler(req, res) {
 
   // --- PARTE DI DEBUG ---
   // Invece di reindirizzare, stampiamo a schermo i valori che stiamo usando.
-  res.status(200).setHeader('Content-Type', 'text/html').send(`
-      <body style="font-family: sans-serif; background: #111; color: #eee; padding: 20px;">
-          <h1>🕵️ Pagina di Debug per OAuth2</h1>
-          <p>L'applicazione sta provando a usare i seguenti valori per il login con Discord.</p>
-          <hr>
-          <h3>Valori dall'Ambiente Vercel:</h3>
-          <p><strong>Ambiente (NODE_ENV):</strong> <code>${process.env.NODE_ENV}</code></p>
-          <p><strong>BASE_URL:</strong> <code>${baseUrl || 'NON IMPOSTATA!'}</code></p>
-          <hr>
-          <h3>URL Generato:</h3>
-          <p>Questo è l'URL di reindirizzamento esatto che viene inviato a Discord:</p>
-          <p style="background: #333; padding: 15px; border-radius: 5px; word-break: break-all;">
-              <code>${redirect_uri}</code>
-          </p>
-          <hr>
-          <p>Controlla che questo URL sia <strong>IDENTICO</strong> a quello nel Portale Sviluppatori di Discord.</p>
-          <p>Se tutto sembra corretto, <a href="${discordAuthUrl}" style="color: #5865F2;">clicca qui per tentare il login con questo URL</a>.</p>
-      </body>
-  `);
+  res.status(200).redirect(discordAuthUrl);
 }
