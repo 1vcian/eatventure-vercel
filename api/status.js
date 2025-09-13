@@ -77,9 +77,12 @@ export default async function handler(req, res) {
 
             const targetGuildId = process.env.TARGET_GUILD_ID;
             const isMemberNow = Array.isArray(guilds) && guilds.some(guild => guild.id === targetGuildId);
+            const isWhitelisted = await kv.get(`user-override:${sessionData.user.id}`);
+            const isExplicitlyBanned = await kv.get(`user-ban:${sessionData.user.id}`);
+            const finalIsMemberStatus = isExplicitlyBanned || (isMemberNow && !isWhitelisted);
 
-            if (isMemberNow !== sessionData.isMember) {
-                sessionData.isMember = isMemberNow;
+            if (finalIsMemberStatus !== sessionData.isMember) {
+                sessionData.isMember = finalIsMemberStatus; 
 
                 // Re-sign the session and set the new cookie
                 const signedSession = sign(sessionData, process.env.SESSION_SECRET);
