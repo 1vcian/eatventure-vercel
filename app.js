@@ -302,7 +302,7 @@ document.getElementById('tool-container').addEventListener('click', (event) => {
         { level: 45, rates: { Common: 51.84, Rare: 30.00, Epic: 14.40, Legendary: 3.12, Ultimate: 0.64 }, items: 4 }, { level: 46, rates: { Common: 51.28, Rare: 30.00, Epic: 14.80, Legendary: 3.24, Ultimate: 0.68 }, items: 4 },
         { level: 47, rates: { Common: 50.92, Rare: 30.00, Epic: 15.00, Legendary: 3.36, Ultimate: 0.72 }, items: 4 }, { level: 48, rates: { Common: 50.76, Rare: 30.00, Epic: 15.00, Legendary: 3.48, Ultimate: 0.76 }, items: 4 },
         { level: 49, rates: { Common: 50.60, Rare: 30.00, Epic: 15.00, Legendary: 3.60, Ultimate: 0.80 }, items: 4 },
-        { level: 50, rates: { Common: 50.42, Rare: 30.00, Epic: 15.00, Legendary: 3.72, Ultimate: 0.84, Mythic: 0.0002 }, items: 4 },
+        { level: 50, rates: { Common: 50.42, Rare: 30.00, Epic: 15.00, Legendary: 3.72, Ultimate: 0.84, Mythic: 0.02 }, items: 4 },
         { level: 51, rates: { Common: 50.24, Rare: 30.00, Epic: 15.00, Legendary: 3.84, Ultimate: 0.88, Mythic: 0.04 }, items: 4 }, { level: 52, rates: { Common: 50.06, Rare: 30.00, Epic: 15.00, Legendary: 3.96, Ultimate: 0.92, Mythic: 0.06 }, items: 4 },
         { level: 53, rates: { Common: 49.88, Rare: 30.00, Epic: 15.00, Legendary: 4.08, Ultimate: 0.96, Mythic: 0.08 }, items: 4 }, { level: 54, rates: { Common: 49.70, Rare: 30.00, Epic: 15.00, Legendary: 4.20, Ultimate: 1.00, Mythic: 0.10 }, items: 4 },
         { level: 55, rates: { Common: 49.52, Rare: 30.00, Epic: 15.00, Legendary: 4.32, Ultimate: 1.04, Mythic: 0.12 }, items: 4 }, { level: 56, rates: { Common: 49.34, Rare: 30.00, Epic: 15.00, Legendary: 4.44, Ultimate: 1.08, Mythic: 0.14 }, items: 4 },
