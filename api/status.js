@@ -82,7 +82,7 @@ export default async function handler(req, res) {
             const finalIsMemberStatus = isExplicitlyBanned || (isMemberNow && !isWhitelisted);
           
 
-            if (finalIsMemberStatus !== sessionData.isMember) {
+          
                 sessionData.isMember = finalIsMemberStatus; 
 
                 // Re-sign the session and set the new cookie
@@ -95,7 +95,7 @@ export default async function handler(req, res) {
                     sameSite: 'lax'
                 });
                 res.setHeader('Set-Cookie', newCookie);
-            }
+            
         } catch (error) {
             console.error('Errore durante il force-refresh:', error);
             return res.status(200).json(sessionData);
