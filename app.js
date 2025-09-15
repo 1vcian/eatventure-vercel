@@ -167,7 +167,7 @@ const toggleFeatures = (isLocked) => {
 
     // --- LOGICA DI POLLING ATTIVO ---
     const checkUserStatusPeriodically = async () => {
-        const userIsActive = (Date.now() - lastActivityTime) < (2 * 60 * 1000); // 2 minuti
+        const userIsActive = (Date.now() - lastActivityTime) < (5 * 60 * 1000); // 2 minuti
         
         // Esegui solo se abbiamo uno stato e l'utente è loggato e attivo
         if (currentUserStatus && currentUserStatus.isLoggedIn && userIsActive) {
