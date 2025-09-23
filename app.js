@@ -763,8 +763,10 @@ document.getElementById('tool-container').addEventListener('click', (event) => {
         }
     }
 function performLocalSearch(targetItem) {
-    // ## MODIFICA: Nasconde la griglia prima di mostrare i risultati ##
+    // STATO DI TRANSIZIONE: Nascondi griglia, mostra contenitore risultati, assicurati che lo spinner sia nascosto.
     document.getElementById('itemGrid').style.display = 'none';
+    document.getElementById('searchSpinner').style.display = 'none';
+    document.getElementById('searchResults').style.display = 'block';
 
     const result = searchForItem(targetItem, currentSearchCard);
     let resultHtml = result.found 
@@ -772,12 +774,12 @@ function performLocalSearch(targetItem) {
         : `<div class="alert alert-danger"><i class="fas fa-times-circle me-2"></i><strong>Item Not Found</strong><br>Could not find <strong>${targetItem}</strong> within 10,000 attempts. ${result.error ? `<br><small>${result.error}</small>` : ''}</div>`;
     
     document.getElementById('searchResultsContent').innerHTML = resultHtml;
-    document.getElementById('searchResults').style.display = 'block';
 }
-
 function performGlobalSearch(targetItem) {
-    // ## MODIFICA: Nasconde la griglia prima di mostrare i risultati ##
+    // STATO DI TRANSIZIONE: Nascondi griglia, mostra contenitore risultati, assicurati che lo spinner sia nascosto.
     document.getElementById('itemGrid').style.display = 'none';
+    document.getElementById('searchSpinner').style.display = 'none';
+    document.getElementById('searchResults').style.display = 'block';
 
     const results = globalSearchForItem(targetItem);
     let resultHtml;
@@ -789,8 +791,8 @@ function performGlobalSearch(targetItem) {
     }
     
     document.getElementById('searchResultsContent').innerHTML = resultHtml;
-    document.getElementById('searchResults').style.display = 'block';
 }
+
 function openLocalSearch(cardId) {
     currentSearchMode = 'local'; 
     currentSearchCard = cardId;
@@ -800,12 +802,11 @@ function openLocalSearch(cardId) {
     document.getElementById('searchModalTitle').textContent = `Find Item in ${cardId.replace(/_/g, ' ')}`;
     populateItemGrid(availableItems);
     
-    // --- SOLUZIONE AI PROBLEMI ---
-    document.getElementById('searchInput').style.display = 'block'; // Assicura che l'input sia visibile
-    document.getElementById('itemGrid').style.display = 'flex';    // Assicura che la griglia sia visibile
-    // ----------------------------
-
+    // STATO INIZIALE CORRETTO: Mostra solo la griglia e l'input di ricerca.
+    document.getElementById('searchInput').style.display = 'block';
+    document.getElementById('itemGrid').style.display = 'flex';
     document.getElementById('searchResults').style.display = 'none'; 
+    
     document.getElementById('searchOverlay').style.display = 'flex';
 }
 
@@ -817,27 +818,33 @@ function openGlobalSearch() {
     document.getElementById('searchModalTitle').textContent = 'Global Item Search';
     populateItemGrid(allItems);
 
-    // --- SOLUZIONE AI PROBLEMI ---
-    document.getElementById('searchInput').style.display = 'block'; // Assicura che l'input sia visibile
-    document.getElementById('itemGrid').style.display = 'flex';    // Assicura che la griglia sia visibile
-    // ----------------------------
+    // STATO INIZIALE CORRETTO: Mostra solo la griglia e l'input di ricerca.
+    document.getElementById('searchInput').style.display = 'block';
+    document.getElementById('itemGrid').style.display = 'flex';
+    document.getElementById('searchResults').style.display = 'none';
 
-    document.getElementById('searchResults').style.display = 'none'; 
     document.getElementById('searchOverlay').style.display = 'flex';
 }
 
-    function populateItemGrid(items) {
-        const grid = document.getElementById('itemGrid'); const searchInput = document.getElementById('searchInput');
-        const renderItems = (filteredItems) => {
-            grid.innerHTML = '';
-            filteredItems.forEach(item => {
-                const itemDiv = document.createElement('div'); itemDiv.className = 'col-4 col-md-3 mb-2';
-                itemDiv.innerHTML = `<div class="text-center"><img src="./src/${item.baseName}.png" alt="${item.baseName}" class="item-image pulse" onclick="selectItemForSearch('${item.baseName}')" style="width: 60px; height: 60px;"><div class="small mt-1">${item.baseName}</div></div>`;
-                grid.appendChild(itemDiv);
-            });
-        };
-        renderItems(items); searchInput.oninput = () => renderItems(items.filter(item => item.baseName.toLowerCase().includes(searchInput.value.toLowerCase())));
-    }
+function populateItemGrid(items) {
+    const grid = document.getElementById('itemGrid'); 
+    const searchInput = document.getElementById('searchInput');
+    
+    const renderItems = (filteredItems) => {
+        grid.innerHTML = '';
+        filteredItems.forEach(item => {
+            const itemDiv = document.createElement('div'); 
+            itemDiv.className = 'col-4 col-md-3 mb-2';
+            // Versione corretta dell'onclick con entrambi i parametri
+            itemDiv.innerHTML = `<div class="text-center"><img src="./src/${item.baseName}.png" alt="${item.baseName}" class="item-image pulse" onclick="selectItemForSearch('${item.baseName}', '${item.rarity}')" style="width: 60px; height: 60px;"><div class="small mt-1">${item.baseName}</div></div>`;
+            grid.appendChild(itemDiv);
+        });
+    };
+    
+    renderItems(items); 
+    searchInput.oninput = () => renderItems(items.filter(item => item.baseName.toLowerCase().includes(searchInput.value.toLowerCase())));
+}
+
     function closeSearchModal() {
         document.getElementById('searchOverlay').style.display = 'none'; currentSearchMode = null; currentSearchCard = null; document.getElementById('searchInput').value = '';
     }
