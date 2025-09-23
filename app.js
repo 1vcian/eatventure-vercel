@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         '.card[data-card-id="pet"]',
         '.card[data-card-id="clan"]',
         '.card[data-card-id="egg_Ultimate"]',
-        '.card[data-card-id="adventure_Pirate"]',
+        '.card[data-card-id^="adventure_Pirate"]',
         '.card[data-card-id^="event_"]',
         '.global-search-btn'
     ];
@@ -762,89 +762,50 @@ document.getElementById('tool-container').addEventListener('click', (event) => {
             performSmartSearch(targetItem, currentSearchCard);
         }
     }
-function performLocalSearch(targetItem) {
-    // STATO DI TRANSIZIONE: Nascondi griglia, mostra contenitore risultati, assicurati che lo spinner sia nascosto.
-    document.getElementById('itemGrid').style.display = 'none';
-    document.getElementById('searchSpinner').style.display = 'none';
-    document.getElementById('searchResults').style.display = 'block';
-
-    const result = searchForItem(targetItem, currentSearchCard);
-    let resultHtml = result.found 
-        ? `<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i><strong>Item Found!</strong><br>Found <strong>${targetItem}</strong> in <strong>${result.attempts}</strong> openings.</div>` 
-        : `<div class="alert alert-danger"><i class="fas fa-times-circle me-2"></i><strong>Item Not Found</strong><br>Could not find <strong>${targetItem}</strong> within 10,000 attempts. ${result.error ? `<br><small>${result.error}</small>` : ''}</div>`;
-    
-    document.getElementById('searchResultsContent').innerHTML = resultHtml;
-}
-function performGlobalSearch(targetItem) {
-    // STATO DI TRANSIZIONE: Nascondi griglia, mostra contenitore risultati, assicurati che lo spinner sia nascosto.
-    document.getElementById('itemGrid').style.display = 'none';
-    document.getElementById('searchSpinner').style.display = 'none';
-    document.getElementById('searchResults').style.display = 'block';
-
-    const results = globalSearchForItem(targetItem);
-    let resultHtml;
-    if (results.length > 0) {
-        const resultsList = results.map(r => `<li class="list-group-item d-flex justify-content-between align-items-center bg-dark text-white"><span><strong>${r.chestType}</strong></span><span class="badge bg-primary rounded-pill">${r.attempts} chests</span></li>`).join('');
-        resultHtml = `<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i><strong>Global Search Results for ${targetItem}:</strong></div><ul class="list-group">${resultsList}</ul>`;
-    } else {
-        resultHtml = `<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i><strong>No Results Found</strong><br>Could not find <strong>${targetItem}</strong> in any chest type with current seeds.</div>`;
+    function performLocalSearch(targetItem) {
+        const result = searchForItem(targetItem, currentSearchCard);
+        let resultHtml = result.found ? `<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i><strong>Item Found!</strong><br>Found <strong>${targetItem}</strong> in <strong>${result.attempts}</strong> openings.</div>` : `<div class="alert alert-danger"><i class="fas fa-times-circle me-2"></i><strong>Item Not Found</strong><br>Could not find <strong>${targetItem}</strong> within 10,000 attempts. ${result.error ? `<br><small>${result.error}</small>` : ''}</div>`;
+        document.getElementById('searchResultsContent').innerHTML = resultHtml;
+        document.getElementById('searchResults').style.display = 'block';
     }
-    
-    document.getElementById('searchResultsContent').innerHTML = resultHtml;
-}
-
-function openLocalSearch(cardId) {
-    currentSearchMode = 'local'; 
-    currentSearchCard = cardId;
-    const [chestType, eventType] = cardId.includes('_') ? cardId.split('_') : [cardId, null];
-    const availableItems = getAvailableItemsForChest(chestType, eventType);
-    
-    document.getElementById('searchModalTitle').textContent = `Find Item in ${cardId.replace(/_/g, ' ')}`;
-    populateItemGrid(availableItems);
-    
-    // STATO INIZIALE CORRETTO: Mostra solo la griglia e l'input di ricerca.
-    document.getElementById('searchInput').style.display = 'block';
-    document.getElementById('itemGrid').style.display = 'flex';
-    document.getElementById('searchResults').style.display = 'none'; 
-    
-    document.getElementById('searchOverlay').style.display = 'flex';
-}
-
-function openGlobalSearch() {
-    currentSearchMode = 'global'; 
-    currentSearchCard = null; 
-    const allItems = getAllAvailableItems();
-    
-    document.getElementById('searchModalTitle').textContent = 'Global Item Search';
-    populateItemGrid(allItems);
-
-    // STATO INIZIALE CORRETTO: Mostra solo la griglia e l'input di ricerca.
-    document.getElementById('searchInput').style.display = 'block';
-    document.getElementById('itemGrid').style.display = 'flex';
-    document.getElementById('searchResults').style.display = 'none';
-
-    document.getElementById('searchOverlay').style.display = 'flex';
-}
-
-function populateItemGrid(items) {
-    const grid = document.getElementById('itemGrid'); 
-    const searchInput = document.getElementById('searchInput');
-    
-    const renderItems = (filteredItems) => {
-        grid.innerHTML = '';
-        filteredItems.forEach(item => {
-            const itemDiv = document.createElement('div'); 
-            itemDiv.className = 'col-4 col-md-3 mb-2';
-            // Versione corretta dell'onclick con entrambi i parametri
-            itemDiv.innerHTML = `<div class="text-center"><img src="./src/${item.baseName}.png" alt="${item.baseName}" class="item-image pulse" onclick="selectItemForSearch('${item.baseName}', '${item.rarity}')" style="width: 60px; height: 60px;"><div class="small mt-1">${item.baseName}</div></div>`;
-            grid.appendChild(itemDiv);
-        });
-    };
-    
-    renderItems(items); 
-    searchInput.oninput = () => renderItems(items.filter(item => item.baseName.toLowerCase().includes(searchInput.value.toLowerCase())));
-}
-
+    function performGlobalSearch(targetItem) {
+        const results = globalSearchForItem(targetItem);
+        let resultHtml;
+        if (results.length > 0) {
+            const resultsList = results.map(r => `<li class="list-group-item d-flex justify-content-between align-items-center bg-dark text-white"><span><strong>${r.chestType}</strong></span><span class="badge bg-primary rounded-pill">${r.attempts} chests</span></li>`).join('');
+            resultHtml = `<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i><strong>Global Search Results for ${targetItem}:</strong></div><ul class="list-group">${resultsList}</ul>`;
+        } else {
+            resultHtml = `<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i><strong>No Results Found</strong><br>Could not find <strong>${targetItem}</strong> in any chest type with current seeds.</div>`;
+        }
+        document.getElementById('searchResultsContent').innerHTML = resultHtml;
+        document.getElementById('searchResults').style.display = 'block';
+    }
+    function openLocalSearch(cardId) {
+        currentSearchMode = 'local'; currentSearchCard = cardId;
+        const [chestType, eventType] = cardId.includes('_') ? cardId.split('_') : [cardId, null];
+        const availableItems = getAvailableItemsForChest(chestType, eventType);
+        document.getElementById('searchModalTitle').textContent = `Find Item in ${cardId.replace(/_/g, ' ')}`;
+        populateItemGrid(availableItems);
+        document.getElementById('searchResults').style.display = 'none'; document.getElementById('searchOverlay').style.display = 'flex';
+    }
+    function openGlobalSearch() {
+        currentSearchMode = 'global'; currentSearchCard = null; const allItems = getAllAvailableItems();
+        document.getElementById('searchModalTitle').textContent = 'Global Item Search';
+        populateItemGrid(allItems);
+        document.getElementById('searchResults').style.display = 'none'; document.getElementById('searchOverlay').style.display = 'flex';
+    }
+    function populateItemGrid(items) {
+        const grid = document.getElementById('itemGrid'); const searchInput = document.getElementById('searchInput');
+        const renderItems = (filteredItems) => {
+            grid.innerHTML = '';
+            filteredItems.forEach(item => {
+                const itemDiv = document.createElement('div'); itemDiv.className = 'col-4 col-md-3 mb-2';
+                itemDiv.innerHTML = `<div class="text-center"><img src="./src/${item.baseName}.png" alt="${item.baseName}" class="item-image pulse" onclick="selectItemForSearch('${item.baseName}')" style="width: 60px; height: 60px;"><div class="small mt-1">${item.baseName}</div></div>`;
+                grid.appendChild(itemDiv);
+            });
+        };
+        renderItems(items); searchInput.oninput = () => renderItems(items.filter(item => item.baseName.toLowerCase().includes(searchInput.value.toLowerCase())));
+    }
     function closeSearchModal() {
         document.getElementById('searchOverlay').style.display = 'none'; currentSearchMode = null; currentSearchCard = null; document.getElementById('searchInput').value = '';
     }
@@ -1066,23 +1027,48 @@ async function performSmartSearch(targetItem, cardId) {
         document.getElementById('searchOverlay').style.display = 'flex';
     }
     // START: Calculators Logic
-    function openSmartFindModal(cardId) {
-    currentSearchMode = 'smart';
-    currentSearchCard = cardId;
-    const [chestType, eventType] = cardId.split('_');
-    const availableItems = getAvailableItemsForChest(chestType, eventType);
+    function calculatePetFood() {
+        const targetAmount = parseInt(document.getElementById('petFoodAmount').value, 10);
+        const resultsContent = document.getElementById('petFoodResultsContent');
+        const resultsContainer = document.getElementById('petFoodResults');
+        resultsContainer.style.display = 'block';
+        
+        if (isNaN(targetAmount) || targetAmount <= 0) {
+            resultsContent.innerHTML = `<div class="alert alert-danger">Please enter a valid positive number.</div>`;
+            return;
+        }
 
-    document.getElementById('searchModalTitle').textContent = `Smart Find Item in ${eventType} Chest`;
-    populateItemGrid(availableItems);
+        const state = cardStates['small'];
+        if (!state || state.initialSeed === null) {
+            resultsContent.innerHTML = `<div class="alert alert-danger">Please set a seed for the Small Box first.</div>`;
+            return;
+        }
 
-    // --- SOLUZIONE AI PROBLEMI ---
-    document.getElementById('searchInput').style.display = 'none'; // Nasconde l'input di testo non necessario
-    document.getElementById('itemGrid').style.display = 'flex';   // Assicura che la griglia sia visibile
-    // ----------------------------
-    
-    document.getElementById('searchResults').style.display = 'none';
-    document.getElementById('searchOverlay').style.display = 'flex';
-}
+        let currentSeed = state.initialSeed;
+        state.history.forEach(action => {
+            const result = simulateChestOpening(currentSeed, LOOT_TABLES.small);
+            currentSeed = result.nextSeed;
+        });
+        
+        let totalPetFood = 0;
+        let boxesOpened = 0;
+        const maxAttempts = 50000;
+        
+        while (totalPetFood < targetAmount && boxesOpened < maxAttempts) {
+            const result = simulateChestOpening(currentSeed, LOOT_TABLES.small);
+            boxesOpened++;
+            result.items.forEach(item => {
+                if (item.baseName === 'PetFood') {
+                    totalPetFood += Number(item.itemRoll || 0);
+                }
+            });
+            currentSeed = result.nextSeed;
+        }
+
+        resultsContent.innerHTML = boxesOpened >= maxAttempts
+            ? `<div class="alert alert-warning">Could not reach the target within ${maxAttempts} boxes.</div>`
+            : `<div class="alert alert-success">You need to open <strong>${boxesOpened}</strong> more Small Boxes to get at least <strong>${targetAmount}</strong> Pet Food. You will have exactly <strong>${totalPetFood}</strong> Pet Food in total.</div>`;
+    }
 
     function calculateXP() {
         const targetAmount = parseInt(document.getElementById('xpAmount').value, 10);
