@@ -780,20 +780,22 @@ document.getElementById('tool-container').addEventListener('click', (event) => {
         document.getElementById('searchResultsContent').innerHTML = resultHtml;
         document.getElementById('searchResults').style.display = 'block';
     }
-    function openLocalSearch(cardId) {
-        currentSearchMode = 'local'; currentSearchCard = cardId;
-        const [chestType, eventType] = cardId.includes('_') ? cardId.split('_') : [cardId, null];
-        const availableItems = getAvailableItemsForChest(chestType, eventType);
-        document.getElementById('searchModalTitle').textContent = `Find Item in ${cardId.replace(/_/g, ' ')}`;
-        populateItemGrid(availableItems);
-        document.getElementById('searchResults').style.display = 'none'; document.getElementById('searchOverlay').style.display = 'flex';
-    }
-    function openGlobalSearch() {
-        currentSearchMode = 'global'; currentSearchCard = null; const allItems = getAllAvailableItems();
-        document.getElementById('searchModalTitle').textContent = 'Global Item Search';
-        populateItemGrid(allItems);
-        document.getElementById('searchResults').style.display = 'none'; document.getElementById('searchOverlay').style.display = 'flex';
-    }
+function openLocalSearch(cardId) {
+    currentSearchMode = 'local'; currentSearchCard = cardId;
+    const [chestType, eventType] = cardId.includes('_') ? cardId.split('_') : [cardId, null];
+    const availableItems = getAvailableItemsForChest(chestType, eventType);
+    document.getElementById('searchModalTitle').textContent = `Find Item in ${cardId.replace(/_/g, ' ')}`;
+    populateItemGrid(availableItems);
+    document.getElementById('itemGrid').style.display = 'flex'; // <-- RIGA AGGIUNTA
+    document.getElementById('searchResults').style.display = 'none'; document.getElementById('searchOverlay').style.display = 'flex';
+}
+function openGlobalSearch() {
+    currentSearchMode = 'global'; currentSearchCard = null; const allItems = getAllAvailableItems();
+    document.getElementById('searchModalTitle').textContent = 'Global Item Search';
+    populateItemGrid(allItems);
+    document.getElementById('itemGrid').style.display = 'flex'; // <-- RIGA AGGIUNTA
+    document.getElementById('searchResults').style.display = 'none'; document.getElementById('searchOverlay').style.display = 'flex';
+}
     function populateItemGrid(items) {
         const grid = document.getElementById('itemGrid'); const searchInput = document.getElementById('searchInput');
         const renderItems = (filteredItems) => {
