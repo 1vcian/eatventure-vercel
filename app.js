@@ -832,44 +832,44 @@ document.getElementById('tool-container').addEventListener('click', (event) => {
         ).join('<br> &rarr; ');
     }
 
-    /**
-     * Performs a Breadth-First Search to find the shortest sequence of chest openings to get a target item.
-     * @param {number} startSeed - The seed to begin the search from.
-     * @param {string} targetItem - The baseName of the item to find.
-     * @param {string} eventType - The type of adventure event ('Zeus' or 'Pirate').
-     * @param {string} cardId - The full card ID ('adventure_Zeus' or 'adventure_Pirate').
-     * @returns {number[]|null} An array representing the optimal path of levels, or null if not found.
-     */
-    function findOptimalPath(startSeed, targetItem, eventType, cardId) {
-        const MAX_DEPTH = 8; // Limit search to 8 openings to prevent browser freezing.
-        const queue = [{ seed: startSeed, path: [] }];
-        // Using a Map to store the shortest path depth to a given seed.
-        const visited = new Map([[startSeed, 0]]);
+   /**
+ * Performs a Breadth-First Search to find the shortest sequence of chest openings to get a target item.
+ * @param {number} startSeed - The seed to begin the search from.
+ * @param {string} targetItem - The baseName of the item to find.
+ * @param {string} eventType - The type of adventure event ('Zeus' or 'Pirate').
+ * @param {string} cardId - The full card ID ('adventure_Zeus' or 'adventure_Pirate').
+ * @param {number} maxLevel - The maximum level the user has reached, to limit the search. // MODIFIED
+ * @returns {number[]|null} An array representing the optimal path of levels, or null if not found.
+ */
+function findOptimalPath(startSeed, targetItem, eventType, cardId, maxLevel) { // MODIFIED
+    const MAX_DEPTH = 8;
+    const queue = [{ seed: startSeed, path: [] }];
+    const visited = new Map([[startSeed, 0]]);
 
-        while (queue.length > 0) {
-            const { seed, path } = queue.shift();
+    while (queue.length > 0) {
+        const { seed, path } = queue.shift();
 
-            if (path.length >= MAX_DEPTH) continue;
+        if (path.length >= MAX_DEPTH) continue;
 
-            // Explore all possible levels (1-100) as potential next steps.
-            for (let level = 1; level <= 100; level++) {
-                const result = simulateAdventureChestOpening(seed, level, eventType, 0, cardId);
+        // MODIFIED: Loop only up to the user's current level.
+        for (let level = 1; level <= maxLevel; level++) {
+            const result = simulateAdventureChestOpening(seed, level, eventType, 0, cardId);
 
-                if (result.items.some(item => item.baseName === targetItem)) {
-                    return [...path, level]; // Success! Return the full path.
-                }
+            if (result.items.some(item => item.baseName === targetItem)) {
+                return [...path, level];
+            }
 
-                const nextSeed = result.nextSeed;
-                const newDepth = path.length + 1;
+            const nextSeed = result.nextSeed;
+            const newDepth = path.length + 1;
 
-                if (!visited.has(nextSeed) || visited.get(nextSeed) > newDepth) {
-                    visited.set(nextSeed, newDepth);
-                    queue.push({ seed: nextSeed, path: [...path, level] });
-                }
+            if (!visited.has(nextSeed) || visited.get(nextSeed) > newDepth) {
+                visited.set(nextSeed, newDepth);
+                queue.push({ seed: nextSeed, path: [...path, level] });
             }
         }
-        return null; // Item not found within MAX_DEPTH.
     }
+    return null;
+}
 
     /**
      * Initiates the smart search process, showing a spinner and displaying the results.
@@ -877,50 +877,64 @@ document.getElementById('tool-container').addEventListener('click', (event) => {
      * @param {string} cardId - The ID of the card initiating the search.
      */
     async function performSmartSearch(targetItem, cardId) {
-        const spinner = document.getElementById('searchSpinner');
-        const resultsContent = document.getElementById('searchResultsContent');
-        const resultsContainer = document.getElementById('searchResults');
+    const spinner = document.getElementById('searchSpinner');
+    const resultsContent = document.getElementById('searchResultsContent');
+    const resultsContainer = document.getElementById('searchResults');
 
-        resultsContent.innerHTML = '';
-        spinner.style.display = 'block';
-        document.getElementById('itemGrid').style.display = 'none'; // Hide item grid
-        resultsContainer.style.display = 'block';
+    resultsContent.innerHTML = '';
+    spinner.style.display = 'block';
+    document.getElementById('itemGrid').style.display = 'none';
+    resultsContainer.style.display = 'block';
 
-        await new Promise(resolve => setTimeout(resolve, 50)); // Allow UI to render spinner
+    await new Promise(resolve => setTimeout(resolve, 50));
 
-        const state = cardStates[cardId];
-        if (!state || state.initialSeed === null) {
-            resultsContent.innerHTML = `<div class="alert alert-danger">Please set an initial seed for this chest first.</div>`;
-            spinner.style.display = 'none';
-            return;
-        }
-
-        const [_, eventType] = cardId.split('_');
-        let startSeed = state.initialSeed;
-        
-        // Calculate the current seed based on the user's opening history.
-        state.history.forEach(action => {
-            const result = simulateAdventureChestOpening(startSeed, action.level, action.eventType, action.vaultPercentage, action.type);
-            startSeed = result.nextSeed;
-        });
-
-        const path = findOptimalPath(startSeed, targetItem, eventType, cardId);
-
-        if (path) {
-            const formattedPath = formatPath(path);
-            resultsContent.innerHTML = `<div class="alert alert-success">
-                <i class="fas fa-check-circle me-2"></i><strong>Optimal Path Found!</strong><br>
-                To get <strong>${targetItem}</strong> in <strong>${path.length}</strong> chest(s) from your current state, follow this sequence:
-                <div class="mt-2 p-2 bg-dark rounded">${formattedPath}</div>
-            </div>`;
-        } else {
-            resultsContent.innerHTML = `<div class="alert alert-warning">
-                <i class="fas fa-exclamation-triangle me-2"></i><strong>Path Not Found</strong><br>
-                An optimal path for <strong>${targetItem}</strong> could not be found within the ${findOptimalPath.toString().match(/MAX_DEPTH = (\d+)/)[1]} chest limit.
-            </div>`;
-        }
+    const state = cardStates[cardId];
+    if (!state || state.initialSeed === null) {
+        resultsContent.innerHTML = `<div class="alert alert-danger">Please set an initial seed for this chest first.</div>`;
         spinner.style.display = 'none';
+        return;
     }
+
+    // ADDED: Get the user's current level from the input on the card.
+    const card = document.querySelector(`.card[data-card-id="${cardId}"]`);
+    const levelInput = card.querySelector('.level-input');
+    const userLevel = parseInt(levelInput.value, 10);
+
+    // ADDED: Validate the user's level input.
+    if (isNaN(userLevel) || userLevel < 1 || userLevel > 100) {
+        resultsContent.innerHTML = `<div class="alert alert-danger">Please enter your current valid Level (1-100) on the card before using Smart Find.</div>`;
+        spinner.style.display = 'none';
+        return;
+    }
+
+    const [_, eventType] = cardId.split('_');
+    let startSeed = state.initialSeed;
+
+    state.history.forEach(action => {
+        const result = simulateAdventureChestOpening(startSeed, action.level, action.eventType, action.vaultPercentage, action.type);
+        startSeed = result.nextSeed;
+    });
+
+    // MODIFIED: Pass the user's level to the search function.
+    const path = findOptimalPath(startSeed, targetItem, eventType, cardId, userLevel);
+
+    if (path) {
+        const formattedPath = formatPath(path);
+        resultsContent.innerHTML = `<div class="alert alert-success">
+            <i class="fas fa-check-circle me-2" style='color:red'></i><strong>Optimal Path Found!</strong><br>
+            To get <strong>${targetItem}</strong> in <strong>${path.length}</strong> chest(s), follow this sequence:
+            <div class="mt-2 p-2 bg-dark rounded">${formattedPath}</div>
+        </div>`;
+    } else {
+        // MODIFIED: Improved "not found" message.
+        const searchLimit = findOptimalPath.toString().match(/MAX_DEPTH = (\d+)/)[1];
+        resultsContent.innerHTML = `<div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i><strong>Path Not Found</strong><br>
+            An optimal path for <strong>${targetItem}</strong> could not be found within ${searchLimit} openings, searching up to <strong>Level ${userLevel}</strong>.
+        </div>`;
+    }
+    spinner.style.display = 'none';
+}
 
     /**
      * Opens the item selection modal for the Smart Find feature.
