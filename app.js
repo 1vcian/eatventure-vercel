@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         '.card[data-card-id="pet"]',
         '.card[data-card-id="clan"]',
         '.card[data-card-id="egg_Ultimate"]',
-        '.card[data-card-id^="adventure_"]',
+        '.card[data-card-id="adventure_Pirate"]',
         '.card[data-card-id^="event_"]',
         '.global-search-btn'
     ];
