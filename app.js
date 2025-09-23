@@ -780,20 +780,41 @@ document.getElementById('tool-container').addEventListener('click', (event) => {
         document.getElementById('searchResultsContent').innerHTML = resultHtml;
         document.getElementById('searchResults').style.display = 'block';
     }
-    function openLocalSearch(cardId) {
-        currentSearchMode = 'local'; currentSearchCard = cardId;
-        const [chestType, eventType] = cardId.includes('_') ? cardId.split('_') : [cardId, null];
-        const availableItems = getAvailableItemsForChest(chestType, eventType);
-        document.getElementById('searchModalTitle').textContent = `Find Item in ${cardId.replace(/_/g, ' ')}`;
-        populateItemGrid(availableItems);
-        document.getElementById('searchResults').style.display = 'none'; document.getElementById('searchOverlay').style.display = 'flex';
-    }
-    function openGlobalSearch() {
-        currentSearchMode = 'global'; currentSearchCard = null; const allItems = getAllAvailableItems();
-        document.getElementById('searchModalTitle').textContent = 'Global Item Search';
-        populateItemGrid(allItems);
-        document.getElementById('searchResults').style.display = 'none'; document.getElementById('searchOverlay').style.display = 'flex';
-    }
+function openLocalSearch(cardId) {
+    currentSearchMode = 'local'; 
+    currentSearchCard = cardId;
+    const [chestType, eventType] = cardId.includes('_') ? cardId.split('_') : [cardId, null];
+    const availableItems = getAvailableItemsForChest(chestType, eventType);
+    
+    document.getElementById('searchModalTitle').textContent = `Find Item in ${cardId.replace(/_/g, ' ')}`;
+    populateItemGrid(availableItems);
+    
+    // --- SOLUZIONE AI PROBLEMI ---
+    document.getElementById('searchInput').style.display = 'block'; // Assicura che l'input sia visibile
+    document.getElementById('itemGrid').style.display = 'flex';    // Assicura che la griglia sia visibile
+    // ----------------------------
+
+    document.getElementById('searchResults').style.display = 'none'; 
+    document.getElementById('searchOverlay').style.display = 'flex';
+}
+
+function openGlobalSearch() {
+    currentSearchMode = 'global'; 
+    currentSearchCard = null; 
+    const allItems = getAllAvailableItems();
+    
+    document.getElementById('searchModalTitle').textContent = 'Global Item Search';
+    populateItemGrid(allItems);
+
+    // --- SOLUZIONE AI PROBLEMI ---
+    document.getElementById('searchInput').style.display = 'block'; // Assicura che l'input sia visibile
+    document.getElementById('itemGrid').style.display = 'flex';    // Assicura che la griglia sia visibile
+    // ----------------------------
+
+    document.getElementById('searchResults').style.display = 'none'; 
+    document.getElementById('searchOverlay').style.display = 'flex';
+}
+
     function populateItemGrid(items) {
         const grid = document.getElementById('itemGrid'); const searchInput = document.getElementById('searchInput');
         const renderItems = (filteredItems) => {
@@ -1027,48 +1048,23 @@ async function performSmartSearch(targetItem, cardId) {
         document.getElementById('searchOverlay').style.display = 'flex';
     }
     // START: Calculators Logic
-    function calculatePetFood() {
-        const targetAmount = parseInt(document.getElementById('petFoodAmount').value, 10);
-        const resultsContent = document.getElementById('petFoodResultsContent');
-        const resultsContainer = document.getElementById('petFoodResults');
-        resultsContainer.style.display = 'block';
-        
-        if (isNaN(targetAmount) || targetAmount <= 0) {
-            resultsContent.innerHTML = `<div class="alert alert-danger">Please enter a valid positive number.</div>`;
-            return;
-        }
+    function openSmartFindModal(cardId) {
+    currentSearchMode = 'smart';
+    currentSearchCard = cardId;
+    const [chestType, eventType] = cardId.split('_');
+    const availableItems = getAvailableItemsForChest(chestType, eventType);
 
-        const state = cardStates['small'];
-        if (!state || state.initialSeed === null) {
-            resultsContent.innerHTML = `<div class="alert alert-danger">Please set a seed for the Small Box first.</div>`;
-            return;
-        }
+    document.getElementById('searchModalTitle').textContent = `Smart Find Item in ${eventType} Chest`;
+    populateItemGrid(availableItems);
 
-        let currentSeed = state.initialSeed;
-        state.history.forEach(action => {
-            const result = simulateChestOpening(currentSeed, LOOT_TABLES.small);
-            currentSeed = result.nextSeed;
-        });
-        
-        let totalPetFood = 0;
-        let boxesOpened = 0;
-        const maxAttempts = 50000;
-        
-        while (totalPetFood < targetAmount && boxesOpened < maxAttempts) {
-            const result = simulateChestOpening(currentSeed, LOOT_TABLES.small);
-            boxesOpened++;
-            result.items.forEach(item => {
-                if (item.baseName === 'PetFood') {
-                    totalPetFood += Number(item.itemRoll || 0);
-                }
-            });
-            currentSeed = result.nextSeed;
-        }
-
-        resultsContent.innerHTML = boxesOpened >= maxAttempts
-            ? `<div class="alert alert-warning">Could not reach the target within ${maxAttempts} boxes.</div>`
-            : `<div class="alert alert-success">You need to open <strong>${boxesOpened}</strong> more Small Boxes to get at least <strong>${targetAmount}</strong> Pet Food. You will have exactly <strong>${totalPetFood}</strong> Pet Food in total.</div>`;
-    }
+    // --- SOLUZIONE AI PROBLEMI ---
+    document.getElementById('searchInput').style.display = 'none'; // Nasconde l'input di testo non necessario
+    document.getElementById('itemGrid').style.display = 'flex';   // Assicura che la griglia sia visibile
+    // ----------------------------
+    
+    document.getElementById('searchResults').style.display = 'none';
+    document.getElementById('searchOverlay').style.display = 'flex';
+}
 
     function calculateXP() {
         const targetAmount = parseInt(document.getElementById('xpAmount').value, 10);
