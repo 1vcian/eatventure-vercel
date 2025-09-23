@@ -832,6 +832,50 @@ document.getElementById('tool-container').addEventListener('click', (event) => {
         ).join('<br> &rarr; ');
     }
 
+/**
+ * Finds all possible paths to a target item within a depth limit using BFS.
+ * @param {number} startSeed - The seed to begin the search from.
+ * @param {string} targetItem - The baseName of the item to find.
+ * @param {string} eventType - The type of adventure event ('Zeus' or 'Pirate').
+ * @param {string} cardId - The full card ID.
+ * @param {number} maxLevel - The maximum level to search up to.
+ * @param {number} vaultPercentage - The user's vault percentage for key simulation.
+ * @returns {Array<{path: number[], cost: number}>} An array of all found solutions.
+ */
+function findAllPaths(startSeed, targetItem, eventType, cardId, maxLevel, vaultPercentage) {
+    const MAX_DEPTH = 8;
+    const solutions = [];
+    const queue = [{ seed: startSeed, path: [], cost: 0 }];
+    const visited = new Map([[startSeed, 0]]); // Stores seed and shortest path length to it.
+
+    while (queue.length > 0) {
+        const { seed, path, cost } = queue.shift();
+
+        if (path.length >= MAX_DEPTH) continue;
+
+        for (let level = 1; level <= maxLevel; level++) {
+            const newPath = [...path, level];
+            const result = simulateAdventureChestOpening(seed, level, eventType, vaultPercentage, cardId);
+            
+            const keysFound = result.items.filter(item => item.baseName.endsWith('KeyIcon')).length;
+            const newCost = cost + (1 - keysFound);
+
+            if (result.items.some(item => item.baseName === targetItem)) {
+                solutions.push({ path: newPath, cost: newCost });
+            }
+
+            const nextSeed = result.nextSeed;
+            const pathLength = newPath.length;
+
+            if (!visited.has(nextSeed) || visited.get(nextSeed) > pathLength) {
+                visited.set(nextSeed, pathLength);
+                queue.push({ seed: nextSeed, path: newPath, cost: newCost });
+            }
+        }
+    }
+    return solutions;
+}
+
    /**
  * Performs a Breadth-First Search to find the shortest sequence of chest openings to get a target item.
  * @param {number} startSeed - The seed to begin the search from.
@@ -871,12 +915,12 @@ function findOptimalPath(startSeed, targetItem, eventType, cardId, maxLevel) { /
     return null;
 }
 
-    /**
-     * Initiates the smart search process, showing a spinner and displaying the results.
-     * @param {string} targetItem - The baseName of the item to find.
-     * @param {string} cardId - The ID of the card initiating the search.
-     */
-    async function performSmartSearch(targetItem, cardId) {
+   /**
+ * Initiates an advanced search to find the shortest and cheapest paths to an item.
+ * @param {string} targetItem - The baseName of the item to find.
+ * @param {string} cardId - The ID of the card initiating the search.
+ */
+async function performSmartSearch(targetItem, cardId) {
     const spinner = document.getElementById('searchSpinner');
     const resultsContent = document.getElementById('searchResultsContent');
     const resultsContainer = document.getElementById('searchResults');
@@ -890,48 +934,64 @@ function findOptimalPath(startSeed, targetItem, eventType, cardId, maxLevel) { /
 
     const state = cardStates[cardId];
     if (!state || state.initialSeed === null) {
-        resultsContent.innerHTML = `<div class="alert alert-danger">Please set an initial seed for this chest first.</div>`;
+        resultsContent.innerHTML = `<div class="alert alert-danger">Please set an initial seed first.</div>`;
         spinner.style.display = 'none';
         return;
     }
 
-    // ADDED: Get the user's current level from the input on the card.
     const card = document.querySelector(`.card[data-card-id="${cardId}"]`);
-    const levelInput = card.querySelector('.level-input');
-    const userLevel = parseInt(levelInput.value, 10);
+    const userLevel = parseInt(card.querySelector('.level-input')?.value, 10);
+    const vaultPercentage = parseInt(card.querySelector('.vault-percentage-input')?.value, 10) || 0;
 
-    // ADDED: Validate the user's level input.
     if (isNaN(userLevel) || userLevel < 1 || userLevel > 100) {
-        resultsContent.innerHTML = `<div class="alert alert-danger">Please enter your current valid Level (1-100) on the card before using Smart Find.</div>`;
+        resultsContent.innerHTML = `<div class="alert alert-danger">Please enter your current valid Level (1-100).</div>`;
         spinner.style.display = 'none';
         return;
     }
+     if (isNaN(vaultPercentage) || vaultPercentage < 0 || vaultPercentage > 100) {
+        resultsContent.innerHTML = `<div class="alert alert-danger">Please enter a valid Vault % (0-100).</div>`;
+        spinner.style.display = 'none';
+        return;
+    }
+
 
     const [_, eventType] = cardId.split('_');
     let startSeed = state.initialSeed;
-
     state.history.forEach(action => {
-        const result = simulateAdventureChestOpening(startSeed, action.level, action.eventType, action.vaultPercentage, action.type);
-        startSeed = result.nextSeed;
+        startSeed = simulateAdventureChestOpening(startSeed, action.level, action.eventType, action.vaultPercentage, action.type).nextSeed;
     });
 
-    // MODIFIED: Pass the user's level to the search function.
-    const path = findOptimalPath(startSeed, targetItem, eventType, cardId, userLevel);
+    const allSolutions = findAllPaths(startSeed, targetItem, eventType, cardId, userLevel, vaultPercentage);
 
-    if (path) {
-        const formattedPath = formatPath(path);
-        resultsContent.innerHTML = `<div class="alert alert-success" >
-            <i class="fas fa-check-circle me-2" ></i><strong>Optimal Path Found!</strong><br>
-            To get <strong>${targetItem}</strong> in <strong>${path.length}</strong> chest(s), follow this sequence:
-            <div class="mt-2 p-2 bg-dark rounded" style='color:red'>${formattedPath}</div>
-        </div>`;
-    } else {
-        // MODIFIED: Improved "not found" message.
-        const searchLimit = findOptimalPath.toString().match(/MAX_DEPTH = (\d+)/)[1];
+    if (allSolutions.length === 0) {
+        const searchLimit = findAllPaths.toString().match(/MAX_DEPTH = (\d+)/)[1];
         resultsContent.innerHTML = `<div class="alert alert-warning">
             <i class="fas fa-exclamation-triangle me-2"></i><strong>Path Not Found</strong><br>
-            An optimal path for <strong>${targetItem}</strong> could not be found within ${searchLimit} openings, searching up to <strong>Level ${userLevel}</strong>.
+            No path for <strong>${targetItem}</strong> could be found within ${searchLimit} openings up to Level ${userLevel}.
         </div>`;
+    } else {
+        const shortestSolution = allSolutions.reduce((a, b) => a.path.length <= b.path.length ? a : b);
+        const cheapestSolution = allSolutions.reduce((a, b) => a.cost <= b.cost ? a : b);
+
+        let html = '';
+        const areSame = JSON.stringify(shortestSolution.path) === JSON.stringify(cheapestSolution.path);
+
+        html += `<div class="alert alert-success">
+                    <h5><i class="fas fa-shoe-prints me-2"></i>Percorso più Breve</h5>
+                    Trovato in <strong>${shortestSolution.path.length}</strong> aperture.
+                    (Costo netto: <strong>${shortestSolution.cost}</strong> forzieri)
+                    <div class="mt-2 p-2 bg-dark rounded" style="color:red">${formatPath(shortestSolution.path)}</div>
+                 </div>`;
+        
+        if (!areSame) {
+            html += `<div class="alert alert-info">
+                        <h5><i class="fas fa-coins me-2"></i>Percorso più Conveniente</h5>
+                        Costo netto: <strong>${cheapestSolution.cost}</strong> forzieri.
+                        (Richiede <strong>${cheapestSolution.path.length}</strong> aperture)
+                        <div class="mt-2 p-2 bg-dark rounded" style="color:red">${formatPath(cheapestSolution.path)}</div>
+                     </div>`;
+        }
+        resultsContent.innerHTML = html;
     }
     spinner.style.display = 'none';
 }
