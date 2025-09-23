@@ -920,10 +920,10 @@ function findOptimalPath(startSeed, targetItem, eventType, cardId, maxLevel) { /
 
     if (path) {
         const formattedPath = formatPath(path);
-        resultsContent.innerHTML = `<div class="alert alert-success" style='color:red'>
+        resultsContent.innerHTML = `<div class="alert alert-success" >
             <i class="fas fa-check-circle me-2" ></i><strong>Optimal Path Found!</strong><br>
             To get <strong>${targetItem}</strong> in <strong>${path.length}</strong> chest(s), follow this sequence:
-            <div class="mt-2 p-2 bg-dark rounded">${formattedPath}</div>
+            <div class="mt-2 p-2 bg-dark rounded" style='color:red'>${formattedPath}</div>
         </div>`;
     } else {
         // MODIFIED: Improved "not found" message.
