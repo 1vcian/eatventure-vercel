@@ -762,24 +762,35 @@ document.getElementById('tool-container').addEventListener('click', (event) => {
             performSmartSearch(targetItem, currentSearchCard);
         }
     }
-    function performLocalSearch(targetItem) {
-        const result = searchForItem(targetItem, currentSearchCard);
-        let resultHtml = result.found ? `<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i><strong>Item Found!</strong><br>Found <strong>${targetItem}</strong> in <strong>${result.attempts}</strong> openings.</div>` : `<div class="alert alert-danger"><i class="fas fa-times-circle me-2"></i><strong>Item Not Found</strong><br>Could not find <strong>${targetItem}</strong> within 10,000 attempts. ${result.error ? `<br><small>${result.error}</small>` : ''}</div>`;
-        document.getElementById('searchResultsContent').innerHTML = resultHtml;
-        document.getElementById('searchResults').style.display = 'block';
+function performLocalSearch(targetItem) {
+    // ## MODIFICA: Nasconde la griglia prima di mostrare i risultati ##
+    document.getElementById('itemGrid').style.display = 'none';
+
+    const result = searchForItem(targetItem, currentSearchCard);
+    let resultHtml = result.found 
+        ? `<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i><strong>Item Found!</strong><br>Found <strong>${targetItem}</strong> in <strong>${result.attempts}</strong> openings.</div>` 
+        : `<div class="alert alert-danger"><i class="fas fa-times-circle me-2"></i><strong>Item Not Found</strong><br>Could not find <strong>${targetItem}</strong> within 10,000 attempts. ${result.error ? `<br><small>${result.error}</small>` : ''}</div>`;
+    
+    document.getElementById('searchResultsContent').innerHTML = resultHtml;
+    document.getElementById('searchResults').style.display = 'block';
+}
+
+function performGlobalSearch(targetItem) {
+    // ## MODIFICA: Nasconde la griglia prima di mostrare i risultati ##
+    document.getElementById('itemGrid').style.display = 'none';
+
+    const results = globalSearchForItem(targetItem);
+    let resultHtml;
+    if (results.length > 0) {
+        const resultsList = results.map(r => `<li class="list-group-item d-flex justify-content-between align-items-center bg-dark text-white"><span><strong>${r.chestType}</strong></span><span class="badge bg-primary rounded-pill">${r.attempts} chests</span></li>`).join('');
+        resultHtml = `<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i><strong>Global Search Results for ${targetItem}:</strong></div><ul class="list-group">${resultsList}</ul>`;
+    } else {
+        resultHtml = `<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i><strong>No Results Found</strong><br>Could not find <strong>${targetItem}</strong> in any chest type with current seeds.</div>`;
     }
-    function performGlobalSearch(targetItem) {
-        const results = globalSearchForItem(targetItem);
-        let resultHtml;
-        if (results.length > 0) {
-            const resultsList = results.map(r => `<li class="list-group-item d-flex justify-content-between align-items-center bg-dark text-white"><span><strong>${r.chestType}</strong></span><span class="badge bg-primary rounded-pill">${r.attempts} chests</span></li>`).join('');
-            resultHtml = `<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i><strong>Global Search Results for ${targetItem}:</strong></div><ul class="list-group">${resultsList}</ul>`;
-        } else {
-            resultHtml = `<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i><strong>No Results Found</strong><br>Could not find <strong>${targetItem}</strong> in any chest type with current seeds.</div>`;
-        }
-        document.getElementById('searchResultsContent').innerHTML = resultHtml;
-        document.getElementById('searchResults').style.display = 'block';
-    }
+    
+    document.getElementById('searchResultsContent').innerHTML = resultHtml;
+    document.getElementById('searchResults').style.display = 'block';
+}
 function openLocalSearch(cardId) {
     currentSearchMode = 'local'; 
     currentSearchCard = cardId;
