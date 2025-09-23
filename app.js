@@ -991,18 +991,18 @@ async function performSmartSearch(targetItem, cardId) {
         const areSame = JSON.stringify(shortestSolution.path) === JSON.stringify(cheapestSolution.path);
 
         html += `<div class="alert alert-success">
-                    <h5><i class="fas fa-shoe-prints me-2"></i>Percorso più Breve</h5>
-                    Trovato in <strong>${shortestSolution.path.length}</strong> aperture.
-                    (Costo netto: <strong>${shortestSolution.cost}</strong> forzieri)
-                    <div class="mt-2 p-2 bg-dark rounded" style="color:red">${formatPath(shortestSolution.path)}</div>
+                    <h5><i class="fas fa-shoe-prints me-2"></i>Shortest Path</h5>
+                    Found in <strong>${shortestSolution.path.length}</strong> openings.
+                    (Net cost: <strong>${shortestSolution.cost}</strong> chests)
+                    <div class="mt-2 p-2 bg-dark rounded" style="color:green">${formatPath(shortestSolution.path)}</div>
                  </div>`;
         
         if (!areSame) {
             html += `<div class="alert alert-info">
-                        <h5><i class="fas fa-coins me-2"></i>Percorso più Conveniente</h5>
-                        Costo netto: <strong>${cheapestSolution.cost}</strong> forzieri.
-                        (Richiede <strong>${cheapestSolution.path.length}</strong> aperture)
-                        <div class="mt-2 p-2 bg-dark rounded" style="color:red">${formatPath(cheapestSolution.path)}</div>
+                        <h5><i class="fas fa-coins me-2"></i>Most Cost-Effective Path</h5>
+                        Net cost: <strong>${cheapestSolution.cost}</strong> chests.
+                        (Requires <strong>${cheapestSolution.path.length}</strong> openings)
+                        <div class="mt-2 p-2 bg-dark rounded" style="color:limegreen">${formatPath(cheapestSolution.path)}</div>
                      </div>`;
         }
         resultsContent.innerHTML = html;
