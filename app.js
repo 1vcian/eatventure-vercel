@@ -833,25 +833,31 @@ document.getElementById('tool-container').addEventListener('click', (event) => {
     }
 
 /**
- * Finds all possible paths to a target item within a depth limit using BFS.
- * @param {number} startSeed - The seed to begin the search from.
- * @param {string} targetItem - The baseName of the item to find.
- * @param {string} eventType - The type of adventure event ('Zeus' or 'Pirate').
- * @param {string} cardId - The full card ID.
- * @param {number} maxLevel - The maximum level to search up to.
- * @param {number} vaultPercentage - The user's vault percentage for key simulation.
+ * Finds all possible paths to a target item, optimized with pruning.
  * @returns {Array<{path: number[], cost: number}>} An array of all found solutions.
  */
 function findAllPaths(startSeed, targetItem, eventType, cardId, maxLevel, vaultPercentage) {
-    const MAX_DEPTH = 8;
+    const MAX_DEPTH = 7;
     const solutions = [];
     const queue = [{ seed: startSeed, path: [], cost: 0 }];
-    const visited = new Map([[startSeed, 0]]); // Stores seed and shortest path length to it.
+    const visited = new Map([[startSeed, { length: 0, cost: 0 }]]);
+
+    // ## NUOVA AGGIUNTA: Variabile per tracciare il costo migliore trovato finora. ##
+    // Inizializzata a un valore infinito.
+    let minCostFound = Infinity;
 
     while (queue.length > 0) {
         const { seed, path, cost } = queue.shift();
 
-        if (path.length >= MAX_DEPTH) continue;
+        // ## OTTIMIZZAZIONE (LA TUA IDEA): Se il costo del percorso attuale è già peggiore ##
+        // ## della soluzione migliore che abbiamo, salta questo ramo della ricerca. ##
+        if (cost >= minCostFound) {
+            continue;
+        }
+
+        if (path.length >= MAX_DEPTH) {
+            continue;
+        }
 
         for (let level = 1; level <= maxLevel; level++) {
             const newPath = [...path, level];
@@ -859,17 +865,25 @@ function findAllPaths(startSeed, targetItem, eventType, cardId, maxLevel, vaultP
             
             const keysFound = result.items.filter(item => item.baseName.endsWith('KeyIcon')).length;
             const newCost = cost + (1 - keysFound);
-
+            
+            // Controlla se abbiamo trovato una soluzione.
             if (result.items.some(item => item.baseName === targetItem)) {
                 solutions.push({ path: newPath, cost: newCost });
+                // ## AGGIORNAMENTO: Se questa soluzione è la migliore finora, aggiorna il nostro riferimento. ##
+                minCostFound = Math.min(minCostFound, newCost);
             }
 
             const nextSeed = result.nextSeed;
             const pathLength = newPath.length;
+            const existingEntry = visited.get(nextSeed);
 
-            if (!visited.has(nextSeed) || visited.get(nextSeed) > pathLength) {
-                visited.set(nextSeed, pathLength);
-                queue.push({ seed: nextSeed, path: newPath, cost: newCost });
+            if (!existingEntry || pathLength < existingEntry.length || (pathLength === existingEntry.length && newCost < existingEntry.cost)) {
+                // Aggiungi alla coda solo se il nuovo costo non è già peggiore della soluzione migliore.
+                // Questo è un secondo controllo che evita di aggiungere percorsi inutili alla coda.
+                if (newCost < minCostFound) {
+                    visited.set(nextSeed, { length: pathLength, cost: newCost });
+                    queue.push({ seed: nextSeed, path: newPath, cost: newCost });
+                }
             }
         }
     }
