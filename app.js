@@ -353,7 +353,7 @@ document.getElementById('tool-container').addEventListener('click', (event) => {
         Rare_Pirate: ["Necklace_Bandana","Necklace_Salt","Necklace_Shelfish","Necklace_Leather"],
         Epic_Pirate: ["Necklace_Pearls","Necklace_Gold","Necklace_Diamond","Necklace_Dog"],
         Legendary_Pirate: ["Necklace_Sausage","Necklace_Compass","Necklace_Beads","Necklace_Shark"],
-        Ultimate_Pirate: ["Necklace_Nazar","Necklace_Pirate","Necklace_Anchor","Necklace_Key"],
+        Ultimate_Pirate: ["Necklace_Pirate","Necklace_Anchor","Necklace_Nazar","Necklace_Key"],     
         Mythic_Pirate: ["Necklace_Trident"],
         
         CommonEgg: ["Pet_Egg_Common"], RareEgg: ["Pet_Egg_Rare"], EpicEgg: ["Pet_Egg_Epic"], LegendaryEgg: ["Pet_Egg_Legendary"], UltimateEgg: ["Pet_Egg_Ultimate"],
