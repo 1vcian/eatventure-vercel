@@ -1,5 +1,6 @@
 let lockInterval = null;
 let cardStates = {};
+let smartSearchTargetItems = [];
 let globalEggCounts = { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Ultimate: 0 };
 let authData = { isLoggedIn: false }; // Contiene lo stato dell'utente
 
@@ -911,15 +912,28 @@ function openSmartXpModal(cardId) {
         });
         return results;
     }
-    function selectItemForSearch(targetItem, rarity) { // Make sure rarity is accepted as an argument
-        if (currentSearchMode === 'local') {
-            performLocalSearch(targetItem);
-        } else if (currentSearchMode === 'global') {
-            performGlobalSearch(targetItem);
-        } else if (currentSearchMode === 'smart') { // ADD THIS BLOCK
-            performSmartSearch(targetItem, currentSearchCard);
+    function selectItemForSearch(targetItem, rarity) {
+    if (currentSearchMode === 'local') {
+        performLocalSearch(targetItem);
+    } else if (currentSearchMode === 'global') {
+        performGlobalSearch(targetItem);
+    } else if (currentSearchMode === 'smart') {
+        const itemIdentifier = targetItem;
+        const itemIndex = smartSearchTargetItems.indexOf(itemIdentifier);
+        const itemElement = event.target; // Get the clicked image element
+
+        if (itemIndex > -1) {
+            // Item is already selected, so unselect it
+            smartSearchTargetItems.splice(itemIndex, 1);
+            itemElement.classList.remove('selected');
+        } else {
+            // Item is not selected, so add it
+            smartSearchTargetItems.push(itemIdentifier);
+            itemElement.classList.add('selected');
         }
+        updateSmartFindButton(); // Update the button to reflect the selection
     }
+}
     function performLocalSearch(targetItem) {
         const result = searchForItem(targetItem, currentSearchCard);
         let resultHtml = result.found ? `<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i><strong>Item Found!</strong><br>Found <strong>${targetItem}</strong> in <strong>${result.attempts}</strong> openings.</div>` : `<div class="alert alert-danger"><i class="fas fa-times-circle me-2"></i><strong>Item Not Found</strong><br>Could not find <strong>${targetItem}</strong> within 10,000 attempts. ${result.error ? `<br><small>${result.error}</small>` : ''}</div>`;
@@ -1000,57 +1014,63 @@ function closeSearchModal() {
         ).join('<br> &rarr; ');
     }
 
-/**
- * Finds all possible paths to a target item, optimized with pruning.
- * @returns {Array<{path: number[], cost: number}>} An array of all found solutions.
- */
-function findAllPaths(startSeed, targetItem, eventType, cardId, maxLevel, vaultPercentage) {
+function findAllPaths(startSeed, targetItems, eventType, cardId, maxLevel, vaultPercentage) {
     const MAX_DEPTH = 7;
     const solutions = [];
-    const queue = [{ seed: startSeed, path: [], cost: 0 }];
-    const visited = new Map([[startSeed, { length: 0, cost: 0 }]]);
+    const targetSet = new Set(targetItems);
 
-    // ## NUOVA AGGIUNTA: Variabile per tracciare il costo migliore trovato finora. ##
-    // Inizializzata a un valore infinito.
+    const queue = [{
+        seed: startSeed,
+        path: [],
+        cost: 0,
+        foundItems: new Set()
+    }];
+
+    const visited = new Map();
     let minCostFound = Infinity;
 
     while (queue.length > 0) {
-        const { seed, path, cost } = queue.shift();
+        const { seed, path, cost, foundItems } = queue.shift();
 
-        // ## OTTIMIZZAZIONE (LA TUA IDEA): Se il costo del percorso attuale è già peggiore ##
-        // ## della soluzione migliore che abbiamo, salta questo ramo della ricerca. ##
-        if (cost >= minCostFound) {
-            continue;
-        }
-
-        if (path.length >= MAX_DEPTH) {
+        if (cost >= minCostFound || path.length >= MAX_DEPTH) {
             continue;
         }
 
         for (let level = 1; level <= maxLevel; level++) {
-            const newPath = [...path, level];
             const result = simulateAdventureChestOpening(seed, level, eventType, vaultPercentage, cardId);
-            
+            const newFoundItems = new Set(foundItems);
+            result.items.forEach(item => {
+                if (targetSet.has(item.baseName)) {
+                    newFoundItems.add(item.baseName);
+                }
+            });
+
             const keysFound = result.items.filter(item => item.baseName.endsWith('KeyIcon')).length;
             const newCost = cost + (1 - keysFound);
-            
-            // Controlla se abbiamo trovato una soluzione.
-            if (result.items.some(item => item.baseName === targetItem)) {
+            const newPath = [...path, { level: level, items: result.items }]; // Store items in path
+
+            if (newFoundItems.size === targetSet.size) {
                 solutions.push({ path: newPath, cost: newCost });
-                // ## AGGIORNAMENTO: Se questa soluzione è la migliore finora, aggiorna il nostro riferimento. ##
                 minCostFound = Math.min(minCostFound, newCost);
             }
 
             const nextSeed = result.nextSeed;
             const pathLength = newPath.length;
-            const existingEntry = visited.get(nextSeed);
+            
+            const frozenFoundSet = [...newFoundItems].sort().join(',');
+            const visitedForSeed = visited.get(nextSeed) || new Map();
+            const existingEntry = visitedForSeed.get(frozenFoundSet);
 
             if (!existingEntry || pathLength < existingEntry.length || (pathLength === existingEntry.length && newCost < existingEntry.cost)) {
-                // Aggiungi alla coda solo se il nuovo costo non è già peggiore della soluzione migliore.
-                // Questo è un secondo controllo che evita di aggiungere percorsi inutili alla coda.
                 if (newCost < minCostFound) {
-                    visited.set(nextSeed, { length: pathLength, cost: newCost });
-                    queue.push({ seed: nextSeed, path: newPath, cost: newCost });
+                    visitedForSeed.set(frozenFoundSet, { length: pathLength, cost: newCost });
+                    visited.set(nextSeed, visitedForSeed);
+                    queue.push({
+                        seed: nextSeed,
+                        path: newPath,
+                        cost: newCost,
+                        foundItems: newFoundItems
+                    });
                 }
             }
         }
@@ -1059,50 +1079,11 @@ function findAllPaths(startSeed, targetItem, eventType, cardId, maxLevel, vaultP
 }
 
    /**
- * Performs a Breadth-First Search to find the shortest sequence of chest openings to get a target item.
- * @param {number} startSeed - The seed to begin the search from.
- * @param {string} targetItem - The baseName of the item to find.
- * @param {string} eventType - The type of adventure event ('Zeus' or 'Pirate').
- * @param {string} cardId - The full card ID ('adventure_Zeus' or 'adventure_Pirate').
- * @param {number} maxLevel - The maximum level the user has reached, to limit the search. // MODIFIED
- * @returns {number[]|null} An array representing the optimal path of levels, or null if not found.
- */
-function findOptimalPath(startSeed, targetItem, eventType, cardId, maxLevel) { // MODIFIED
-    const MAX_DEPTH = 8;
-    const queue = [{ seed: startSeed, path: [] }];
-    const visited = new Map([[startSeed, 0]]);
-
-    while (queue.length > 0) {
-        const { seed, path } = queue.shift();
-
-        if (path.length >= MAX_DEPTH) continue;
-
-        // MODIFIED: Loop only up to the user's current level.
-        for (let level = 1; level <= maxLevel; level++) {
-            const result = simulateAdventureChestOpening(seed, level, eventType, 0, cardId);
-
-            if (result.items.some(item => item.baseName === targetItem)) {
-                return [...path, level];
-            }
-
-            const nextSeed = result.nextSeed;
-            const newDepth = path.length + 1;
-
-            if (!visited.has(nextSeed) || visited.get(nextSeed) > newDepth) {
-                visited.set(nextSeed, newDepth);
-                queue.push({ seed: nextSeed, path: [...path, level] });
-            }
-        }
-    }
-    return null;
-}
-
-   /**
  * Initiates an advanced search to find the shortest and cheapest paths to an item.
  * @param {string} targetItem - The baseName of the item to find.
  * @param {string} cardId - The ID of the card initiating the search.
  */
-async function performSmartSearch(targetItem, cardId) {
+async function performSmartSearch_old(targetItem, cardId) {
     const spinner = document.getElementById('searchSpinner');
     const resultsContent = document.getElementById('searchResultsContent');
     const resultsContainer = document.getElementById('searchResults');
@@ -1178,22 +1159,139 @@ async function performSmartSearch(targetItem, cardId) {
     spinner.style.display = 'none';
 }
 
-    /**
-     * Opens the item selection modal for the Smart Find feature.
-     * @param {string} cardId - The ID of the card ('adventure_Zeus' or 'adventure_Pirate').
-     */
-    function openSmartFindModal(cardId) {
-        currentSearchMode = 'smart';
-        currentSearchCard = cardId;
-        const [chestType, eventType] = cardId.split('_');
+// Replace the old formatPath function with this new, more detailed formatter
+function formatPathWithItems(path, targetItems) {
+    if (!path || path.length === 0) return "No actions required.";
+    const targetSet = new Set(targetItems);
 
-        const availableItems = getAvailableItemsForChest(chestType, eventType);
-        document.getElementById('searchModalTitle').textContent = `Smart Find Item in ${eventType} Chest`;
-        populateItemGrid(availableItems);
-        document.getElementById('searchResults').style.display = 'none';
-        document.getElementById('itemGrid').style.display = 'flex'; // Ensure grid is visible
-        document.getElementById('searchOverlay').style.display = 'flex';
+    let html = '<div class="list-group">';
+    path.forEach((step, index) => {
+        // Use a different style for target items to make them stand out
+        const itemsHtml = step.items.map(item => {
+            const isTarget = targetSet.has(item.baseName);
+            const formattedItem = formatItemDisplay(item);
+            return isTarget 
+                ? formattedItem.replace('class="item-card', 'class="item-card bg-success text-white border border-light"') 
+                : formattedItem;
+        }).join('');
+
+        const keyFound = step.items.some(item => item.baseName.endsWith('KeyIcon'));
+        const keyHtml = keyFound ? '<span class="badge bg-warning text-dark ms-2"><i class="fas fa-key"></i> +1 Free Open</span>' : '';
+
+        html += `
+            <div class="list-group-item bg-transparent text-white border-secondary mb-2 rounded">
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">Step ${index + 1}: Open Level ${step.level} ${keyHtml}</h6>
+                </div>
+                <div class="row row-cols-3 g-2 mt-2" style="justify-content: center;">
+                    ${itemsHtml}
+                </div>
+            </div>`;
+    });
+    html += '</div>';
+    return html;
+}
+
+// Modify performSmartSearch to use the new logic and formatter
+async function performSmartSearch(targetItems, cardId) {
+    const spinner = document.getElementById('searchSpinner');
+    const resultsContent = document.getElementById('searchResultsContent');
+    const resultsContainer = document.getElementById('searchResults');
+
+    resultsContent.innerHTML = '';
+    spinner.style.display = 'block';
+    document.getElementById('itemGrid').style.display = 'none';
+    resultsContainer.style.display = 'block';
+
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    const state = cardStates[cardId];
+    if (!state || state.initialSeed === null) { /* ... error handling ... */ return; }
+
+    const card = document.querySelector(`.card[data-card-id="${cardId}"]`);
+    const userLevel = parseInt(card.querySelector('.level-input')?.value, 10);
+    const vaultPercentage = parseInt(card.querySelector('.vault-percentage-input')?.value, 10) || 0;
+
+    if (isNaN(userLevel) || userLevel < 1 || userLevel > 100) { /* ... error handling ... */ return; }
+    if (isNaN(vaultPercentage) || vaultPercentage < 0 || vaultPercentage > 100) { /* ... error handling ... */ return; }
+
+    const [_, eventType] = cardId.split('_');
+    let startSeed = state.initialSeed;
+    state.history.forEach(action => {
+        startSeed = simulateAdventureChestOpening(startSeed, action.level, action.eventType, action.vaultPercentage, action.type).nextSeed;
+    });
+
+    const allSolutions = findAllPaths(startSeed, targetItems, eventType, cardId, userLevel, vaultPercentage);
+
+    if (allSolutions.length === 0) {
+        // ... error handling for no results ...
+    } else {
+        const shortestSolution = allSolutions.reduce((a, b) => a.path.length <= b.path.length ? a : b);
+        const cheapestSolution = allSolutions.reduce((a, b) => a.cost <= b.cost ? a : b);
+        
+        let html = '';
+        const areSame = JSON.stringify(shortestSolution.path.map(p => p.level)) === JSON.stringify(cheapestSolution.path.map(p => p.level));
+
+        html += `<div class="alert alert-success">
+                    <h5><i class="fas fa-shoe-prints me-2"></i>Shortest Path (Found All Items)</h5>
+                    Found in <strong>${shortestSolution.path.length}</strong> openings. (Net cost: <strong>${shortestSolution.cost}</strong> chests)
+                    <div class="mt-2 p-2 bg-dark rounded">${formatPathWithItems(shortestSolution.path, targetItems)}</div>
+                 </div>`;
+        
+        if (!areSame) {
+            html += `<div class="alert alert-info">
+                        <h5><i class="fas fa-coins me-2"></i>Most Cost-Effective Path (Found All Items)</h5>
+                        Net cost: <strong>${cheapestSolution.cost}</strong> chests. (Requires <strong>${cheapestSolution.path.length}</strong> openings)
+                        <div class="mt-2 p-2 bg-dark rounded">${formatPathWithItems(cheapestSolution.path, targetItems)}</div>
+                     </div>`;
+        }
+        resultsContent.innerHTML = html;
     }
+    spinner.style.display = 'none';
+}
+
+
+function updateSmartFindButton() {
+    const startBtn = document.getElementById('startSmartFindSearchBtn');
+    if (startBtn) {
+        if (smartSearchTargetItems.length > 0) {
+            startBtn.disabled = false;
+            startBtn.innerHTML = `<i class="fas fa-brain me-1"></i> Find ${smartSearchTargetItems.length} Item(s)`;
+        } else {
+            startBtn.disabled = true;
+            startBtn.innerHTML = `<i class="fas fa-brain me-1"></i> Select Items to Find`;
+        }
+    }
+}
+
+function openSmartFindModal(cardId) {
+    currentSearchMode = 'smart';
+    currentSearchCard = cardId;
+    smartSearchTargetItems = []; // Reset selections each time the modal is opened
+    const [chestType, eventType] = cardId.split('_');
+
+    const availableItems = getAvailableItemsForChest(chestType, eventType);
+    document.getElementById('searchModalTitle').textContent = `Smart Find Items in ${eventType} Chest`;
+    populateItemGrid(availableItems);
+
+    // Add the search button to the modal if it's not already there
+    let searchModal = document.querySelector('#searchOverlay .search-modal');
+    if (!document.getElementById('startSmartFindSearchBtn')) {
+        const btnHtml = `<button id="startSmartFindSearchBtn" class="btn btn-success w-100 mt-3" disabled><i class="fas fa-brain me-1"></i> Select Items to Find</button>`;
+        searchModal.insertAdjacentHTML('beforeend', btnHtml);
+
+        document.getElementById('startSmartFindSearchBtn').addEventListener('click', () => {
+            if (smartSearchTargetItems.length > 0) {
+                performSmartSearch(smartSearchTargetItems, currentSearchCard);
+            }
+        });
+    }
+
+    updateSmartFindButton();
+    document.getElementById('searchResults').style.display = 'none';
+    document.getElementById('itemGrid').style.display = 'flex';
+    document.getElementById('searchOverlay').style.display = 'flex';
+}
     // START: Calculators Logic
     function calculatePetFood() {
         const targetAmount = parseInt(document.getElementById('petFoodAmount').value, 10);
