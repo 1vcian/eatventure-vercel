@@ -1166,7 +1166,11 @@ async function performSmartSearch(targetItems, cardId) {
     const allSolutions = findAllPaths(startSeed, targetItems, eventType, cardId, userLevel, vaultPercentage);
 
     if (allSolutions.length === 0) {
-        // ... error handling for no results ...
+         const searchLimit = findAllPaths.toString().match(/MAX_DEPTH = (\d+)/)[1];
+        resultsContent.innerHTML = `<div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i><strong>Path Not Found</strong><br>
+            No path  could be found within ${searchLimit} openings up to Level ${userLevel}.
+        </div>`;
     } else {
         const shortestSolution = allSolutions.reduce((a, b) => a.path.length <= b.path.length ? a : b);
         const cheapestSolution = allSolutions.reduce((a, b) => a.cost <= b.cost ? a : b);
