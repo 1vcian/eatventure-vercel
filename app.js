@@ -812,7 +812,7 @@ async function performSmartXpSearch(cardId) {
 function openSmartXpModal(cardId) {
     // Memorizza il cardId per quando il pulsante di avvio verrà premuto
     currentSearchCard = cardId; 
-    
+        document.getElementById('smartFindControls').style.display = 'none';
     // Configura la modale per la ricerca "Smart XP"
     document.getElementById('searchModalTitle').textContent = 'Smart XP Optimizer';
     document.getElementById('smartXpOptions').style.display = 'block';
@@ -953,6 +953,7 @@ function openSmartXpModal(cardId) {
         document.getElementById('searchResults').style.display = 'block';
     }
 function openLocalSearch(cardId) {
+        document.getElementById('smartFindControls').style.display = 'none';
     currentSearchMode = 'local'; currentSearchCard = cardId;
     const [chestType, eventType] = cardId.includes('_') ? cardId.split('_') : [cardId, null];
     const availableItems = getAvailableItemsForChest(chestType, eventType);
@@ -962,6 +963,7 @@ function openLocalSearch(cardId) {
     document.getElementById('searchResults').style.display = 'none'; document.getElementById('searchOverlay').style.display = 'flex';
 }
 function openGlobalSearch() {
+        document.getElementById('smartFindControls').style.display = 'none';
     currentSearchMode = 'global'; currentSearchCard = null; const allItems = getAllAvailableItems();
     document.getElementById('searchModalTitle').textContent = 'Global Item Search';
     populateItemGrid(allItems);
@@ -1171,7 +1173,7 @@ function formatPathWithItems(path, targetItems) {
             const isTarget = targetSet.has(item.baseName);
             const formattedItem = formatItemDisplay(item);
             return isTarget 
-                ? formattedItem.replace('class="item-card', 'class="item-card border-light ') 
+                ? formattedItem.replace('class="item-card', 'class="item-card') 
                 : formattedItem;
         }).join('');
 
@@ -1264,32 +1266,35 @@ function updateSmartFindButton() {
     }
 }
 
+// In app.js, modifica la funzione openSmartFindModal
 function openSmartFindModal(cardId) {
     currentSearchMode = 'smart';
     currentSearchCard = cardId;
-    smartSearchTargetItems = []; // Reset selections each time the modal is opened
+    smartSearchTargetItems = []; // Resetta la selezione
     const [chestType, eventType] = cardId.split('_');
 
     const availableItems = getAvailableItemsForChest(chestType, eventType);
     document.getElementById('searchModalTitle').textContent = `Smart Find Items in ${eventType} Chest`;
     populateItemGrid(availableItems);
 
-    // Add the search button to the modal if it's not already there
-    let searchModal = document.querySelector('#searchOverlay .search-modal');
-    if (!document.getElementById('startSmartFindSearchBtn')) {
-        const btnHtml = `<button id="startSmartFindSearchBtn" class="btn btn-success w-100 mt-3" disabled><i class="fas fa-brain me-1"></i> Select Items to Find</button>`;
-        searchModal.insertAdjacentHTML('beforeend', btnHtml);
-
-        document.getElementById('startSmartFindSearchBtn').addEventListener('click', () => {
-            if (smartSearchTargetItems.length > 0) {
-                performSmartSearch(smartSearchTargetItems, currentSearchCard);
-            }
-        });
-    }
-
-    updateSmartFindButton();
-    document.getElementById('searchResults').style.display = 'none';
+    // Mostra gli elementi corretti per questa modale
+    document.getElementById('smartFindControls').style.display = 'block';
+    document.getElementById('itemSearchGroup').style.display = 'block';
     document.getElementById('itemGrid').style.display = 'flex';
+    document.getElementById('searchResults').style.display = 'none';
+
+    // Rimuovi il vecchio event listener e aggiungine uno nuovo per sicurezza
+    const startBtn = document.getElementById('startSmartFindSearchBtn');
+    const newStartBtn = startBtn.cloneNode(true);
+    startBtn.parentNode.replaceChild(newStartBtn, startBtn);
+
+    newStartBtn.addEventListener('click', () => {
+        if (smartSearchTargetItems.length > 0) {
+            performSmartSearch(smartSearchTargetItems, currentSearchCard);
+        }
+    });
+    
+    updateSmartFindButton(); // Aggiorna lo stato iniziale del bottone
     document.getElementById('searchOverlay').style.display = 'flex';
 }
     // START: Calculators Logic

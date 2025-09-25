@@ -1245,6 +1245,12 @@
         <input type="text" class="form-control" id="searchInput" placeholder="Type to search items...">
     </div>
     <div class="row" id="itemGrid" style="max-height: 300px; overflow-y: auto;"></div>
+          <div id="smartFindControls" class="mt-3" style="display: none;">
+        <button id="startSmartFindSearchBtn" class="btn btn-success w-100" disabled>
+            <i class="fas fa-brain me-1"></i> Select Items to Find
+        </button>
+    </div>
+
             <div id="searchResults" class="mt-3" style="display: none;">
                 <div id="searchSpinner" class="text-center" style="display: none;">
                     <div class="spinner-border text-primary" role="status">
@@ -1255,7 +1261,7 @@
                 <h5>Search Results:</h5>
                 <div id="searchResultsContent"></div>
             </div>
-            
+      
 
 
             
