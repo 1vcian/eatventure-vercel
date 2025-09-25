@@ -367,6 +367,7 @@ document.getElementById('tool-container').addEventListener('click', (event) => {
     const XP_VALUES_ITEMS = { Common: 4, Rare: 9, Epic: 22, Legendary: 26, Ultimate: 61, Mythic: 144 };
     const XP_VALUES_EGGS = { Common: 25, Rare: 50, Epic: 150, Legendary: 425, Ultimate: 1000 };
     const DOMINANT_ADVENTURE_LEVELS = [4, 24, 39, 59, 100]; 
+    const DOMINANT_ADVENTURE_LEVELS_FOR_ITEMS = [1, 4, 5, 24, 25, 39, 40, 59, 60];
     const AVERAGE_XP = {};
     (function calculateAverageXps() {
         for (const chestId in LOOT_TABLES) {
@@ -1016,8 +1017,10 @@ function closeSearchModal() {
         ).join('<br> &rarr; ');
     }
 
+// In app.js, sostituisci la funzione findAllPaths con questa versione aggiornata
+
 function findAllPaths(startSeed, targetItems, eventType, cardId, maxLevel, vaultPercentage) {
-    const MAX_DEPTH = 7;
+    const MAX_DEPTH = 15;
     const solutions = [];
     const targetSet = new Set(targetItems);
 
@@ -1031,6 +1034,22 @@ function findAllPaths(startSeed, targetItems, eventType, cardId, maxLevel, vault
     const visited = new Map();
     let minCostFound = Infinity;
 
+    // --- INIZIO MODIFICA ---
+
+    // 1. Filtra i livelli dominanti in base al livello massimo dell'utente
+    let relevantLevels = DOMINANT_ADVENTURE_LEVELS_FOR_ITEMS.filter(level => level <= maxLevel);
+
+    // 2. Assicurati che il livello massimo dell'utente sia sempre incluso nella ricerca
+    if (!relevantLevels.includes(maxLevel)) {
+        relevantLevels.push(maxLevel);
+    }
+    
+    // 3. Rimuovi eventuali duplicati e ordina
+    relevantLevels = [...new Set(relevantLevels)].sort((a, b) => a - b);
+
+    // --- FINE MODIFICA ---
+
+
     while (queue.length > 0) {
         const { seed, path, cost, foundItems } = queue.shift();
 
@@ -1038,7 +1057,8 @@ function findAllPaths(startSeed, targetItems, eventType, cardId, maxLevel, vault
             continue;
         }
 
-        for (let level = 1; level <= maxLevel; level++) {
+        // --- MODIFICA: Usa la lista di livelli ottimizzati invece di un ciclo completo ---
+        for (const level of relevantLevels) {
             const result = simulateAdventureChestOpening(seed, level, eventType, vaultPercentage, cardId);
             const newFoundItems = new Set(foundItems);
             result.items.forEach(item => {
@@ -1049,7 +1069,7 @@ function findAllPaths(startSeed, targetItems, eventType, cardId, maxLevel, vault
 
             const keysFound = result.items.filter(item => item.baseName.endsWith('KeyIcon')).length;
             const newCost = cost + (1 - keysFound);
-            const newPath = [...path, { level: level, items: result.items }]; // Store items in path
+            const newPath = [...path, { level: level, items: result.items }];
 
             if (newFoundItems.size === targetSet.size) {
                 solutions.push({ path: newPath, cost: newCost });
