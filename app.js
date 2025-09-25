@@ -1171,7 +1171,7 @@ function formatPathWithItems(path, targetItems) {
             const isTarget = targetSet.has(item.baseName);
             const formattedItem = formatItemDisplay(item);
             return isTarget 
-                ? formattedItem.replace('class="item-card', 'class="item-card bg-success text-white border border-light"') 
+                ? formattedItem.replace('class="item-card', 'class="item-card border-light ') 
                 : formattedItem;
         }).join('');
 
