@@ -365,7 +365,7 @@ document.getElementById('tool-container').addEventListener('click', (event) => {
 
     const XP_VALUES_ITEMS = { Common: 4, Rare: 9, Epic: 22, Legendary: 26, Ultimate: 61, Mythic: 144 };
     const XP_VALUES_EGGS = { Common: 25, Rare: 50, Epic: 150, Legendary: 425, Ultimate: 1000 };
-
+    const DOMINANT_ADVENTURE_LEVELS = [4, 24, 39, 59, 100]; 
     const AVERAGE_XP = {};
     (function calculateAverageXps() {
         for (const chestId in LOOT_TABLES) {
@@ -678,17 +678,12 @@ document.getElementById('tool-container').addEventListener('click', (event) => {
     }
 
     // Search Functions
-/**
- * Recursively searches for the combination of openings that maximizes XP.
- * @param {object} options - The search parameters.
- * @returns {object} The best solution found { path: array, xp: number }.
- */
-function findOptimalXpPath({ startSeed, eventType, cardId, maxLevel, vaultPercentage, initialOpenings }) {
+
+    function findOptimalXpPath({ startSeed, eventType, cardId, maxLevel, vaultPercentage, initialOpenings }) {
     let bestSolution = { path: [], xp: -1 };
-    //const initialOpenings = 4; // Start with 4 free openings
 
     function search(currentSeed, currentPath, currentXp, openingsLeft) {
-        // Base case: If we have no more openings, this path is complete.
+        // La base case: se non ci sono più aperture, il percorso è completo.
         if (openingsLeft <= 0) {
             if (currentXp > bestSolution.xp) {
                 bestSolution = { path: currentPath, xp: currentXp };
@@ -696,8 +691,17 @@ function findOptimalXpPath({ startSeed, eventType, cardId, maxLevel, vaultPercen
             return;
         }
 
-        // Recursive step: Try opening a chest at each possible level.
-        for (let level = 1; level <= maxLevel; level++) {
+        // Filtra i livelli dominanti per considerare solo quelli raggiungibili dall'utente
+        const relevantDominantLevels = DOMINANT_ADVENTURE_LEVELS.filter(level => level <= maxLevel);
+        
+        // Se il livello massimo dell'utente è un livello intermedio (es. 42),
+        // ci assicuriamo di includerlo nella ricerca.
+        if (!relevantDominantLevels.includes(maxLevel)) {
+            relevantDominantLevels.push(maxLevel);
+        }
+
+        // Itera solo sui livelli ottimali invece di tutti i livelli
+        for (const level of relevantDominantLevels) {
             const result = simulateAdventureChestOpening(currentSeed, level, eventType, vaultPercentage, cardId);
             
             let openingXp = 0;
@@ -705,18 +709,17 @@ function findOptimalXpPath({ startSeed, eventType, cardId, maxLevel, vaultPercen
                 openingXp += getItemXp(item);
             });
 
-            // Check if a key was found, which grants an extra opening.
             const keysFound = result.items.filter(item => item.baseName.endsWith('KeyIcon')).length;
             const newOpeningsLeft = openingsLeft - 1 + keysFound;
 
             const newPath = [...currentPath, { level: level, items: result.items, xp: openingXp }];
             
-            // Continue the search down this new path.
+            // Continua la ricerca lungo questo nuovo percorso
             search(result.nextSeed, newPath, currentXp + openingXp, newOpeningsLeft);
         }
     }
 
-    // Start the recursive search.
+    // Avvia la ricerca ricorsiva
     search(startSeed, [], 0, initialOpenings);
     return bestSolution;
 }
