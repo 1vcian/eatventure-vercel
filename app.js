@@ -1100,86 +1100,6 @@ function findAllPaths(startSeed, targetItems, eventType, cardId, maxLevel, vault
     return solutions;
 }
 
-   /**
- * Initiates an advanced search to find the shortest and cheapest paths to an item.
- * @param {string} targetItem - The baseName of the item to find.
- * @param {string} cardId - The ID of the card initiating the search.
- */
-async function performSmartSearch_old(targetItem, cardId) {
-    const spinner = document.getElementById('searchSpinner');
-    const resultsContent = document.getElementById('searchResultsContent');
-    const resultsContainer = document.getElementById('searchResults');
-
-    resultsContent.innerHTML = '';
-    spinner.style.display = 'block';
-    document.getElementById('itemGrid').style.display = 'none';
-    resultsContainer.style.display = 'block';
-
-    await new Promise(resolve => setTimeout(resolve, 50));
-
-    const state = cardStates[cardId];
-    if (!state || state.initialSeed === null) {
-        resultsContent.innerHTML = `<div class="alert alert-danger">Please set an initial seed first.</div>`;
-        spinner.style.display = 'none';
-        return;
-    }
-
-    const card = document.querySelector(`.card[data-card-id="${cardId}"]`);
-    const userLevel = parseInt(card.querySelector('.level-input')?.value, 10);
-    const vaultPercentage = parseInt(card.querySelector('.vault-percentage-input')?.value, 10) || 0;
-
-    if (isNaN(userLevel) || userLevel < 1 || userLevel > 100) {
-        resultsContent.innerHTML = `<div class="alert alert-danger">Please enter your current valid Level (1-100).</div>`;
-        spinner.style.display = 'none';
-        return;
-    }
-     if (isNaN(vaultPercentage) || vaultPercentage < 0 || vaultPercentage > 100) {
-        resultsContent.innerHTML = `<div class="alert alert-danger">Please enter a valid Vault % (0-100).</div>`;
-        spinner.style.display = 'none';
-        return;
-    }
-
-
-    const [_, eventType] = cardId.split('_');
-    let startSeed = state.initialSeed;
-    state.history.forEach(action => {
-        startSeed = simulateAdventureChestOpening(startSeed, action.level, action.eventType, action.vaultPercentage, action.type).nextSeed;
-    });
-
-    const allSolutions = findAllPaths(startSeed, targetItem, eventType, cardId, userLevel, vaultPercentage);
-
-    if (allSolutions.length === 0) {
-        const searchLimit = findAllPaths.toString().match(/MAX_DEPTH = (\d+)/)[1];
-        resultsContent.innerHTML = `<div class="alert alert-warning">
-            <i class="fas fa-exclamation-triangle me-2"></i><strong>Path Not Found</strong><br>
-            No path for <strong>${targetItem}</strong> could be found within ${searchLimit} openings up to Level ${userLevel}.
-        </div>`;
-    } else {
-        const shortestSolution = allSolutions.reduce((a, b) => a.path.length <= b.path.length ? a : b);
-        const cheapestSolution = allSolutions.reduce((a, b) => a.cost <= b.cost ? a : b);
-
-        let html = '';
-        const areSame = JSON.stringify(shortestSolution.path) === JSON.stringify(cheapestSolution.path);
-         if (areSame) {
-        html += `<div class="alert alert-success">
-                    <h5><i class="fas fa-shoe-prints me-2"></i>Shortest Path</h5>
-                    Found in <strong>${shortestSolution.path.length}</strong> openings.
-                    (Net cost: <strong>${shortestSolution.cost}</strong> chests)
-                    <div class="mt-2 p-2 bg-dark rounded" style="color:green">${formatPath(shortestSolution.path)}</div>
-                 </div>`;
-         }
-        else{
-            html += `<div class="alert alert-info">
-                        <h5><i class="fas fa-coins me-2"></i>Most Cost-Effective Path</h5>
-                        Net cost: <strong>${cheapestSolution.cost}</strong> chests.
-                        (Requires <strong>${cheapestSolution.path.length}</strong> openings)
-                        <div class="mt-2 p-2 bg-dark rounded" style="color:limegreen">${formatPath(cheapestSolution.path)}</div>
-                     </div>`;
-        }
-        resultsContent.innerHTML = html;
-    }
-    spinner.style.display = 'none';
-}
 
 // Replace the old formatPath function with this new, more detailed formatter
 function formatPathWithItems(path, targetItems) {
@@ -1253,14 +1173,14 @@ async function performSmartSearch(targetItems, cardId) {
         
         let html = '';
         const areSame = JSON.stringify(shortestSolution.path.map(p => p.level)) === JSON.stringify(cheapestSolution.path.map(p => p.level));
-
+        if (areSame) {
         html += `<div class="alert alert-success">
                     <h5><i class="fas fa-shoe-prints me-2"></i>Shortest Path (Found All Items)</h5>
                     Found in <strong>${shortestSolution.path.length}</strong> openings. (Net cost: <strong>${shortestSolution.cost}</strong> chests)
                     <div class="mt-2 p-2 bg-dark rounded">${formatPathWithItems(shortestSolution.path, targetItems)}</div>
                  </div>`;
-        
-        if (!areSame) {
+        }
+        else{
             html += `<div class="alert alert-info">
                         <h5><i class="fas fa-coins me-2"></i>Most Cost-Effective Path (Found All Items)</h5>
                         Net cost: <strong>${cheapestSolution.cost}</strong> chests. (Requires <strong>${cheapestSolution.path.length}</strong> openings)
