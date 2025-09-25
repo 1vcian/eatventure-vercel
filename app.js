@@ -1160,15 +1160,15 @@ async function performSmartSearch_old(targetItem, cardId) {
 
         let html = '';
         const areSame = JSON.stringify(shortestSolution.path) === JSON.stringify(cheapestSolution.path);
-
+         if (!areSame) {
         html += `<div class="alert alert-success">
                     <h5><i class="fas fa-shoe-prints me-2"></i>Shortest Path</h5>
                     Found in <strong>${shortestSolution.path.length}</strong> openings.
                     (Net cost: <strong>${shortestSolution.cost}</strong> chests)
                     <div class="mt-2 p-2 bg-dark rounded" style="color:green">${formatPath(shortestSolution.path)}</div>
                  </div>`;
-        
-        if (!areSame) {
+         }
+        else{
             html += `<div class="alert alert-info">
                         <h5><i class="fas fa-coins me-2"></i>Most Cost-Effective Path</h5>
                         Net cost: <strong>${cheapestSolution.cost}</strong> chests.
