@@ -954,7 +954,7 @@ function openGlobalSearch() {
     document.getElementById('itemGrid').style.display = 'flex'; // <-- RIGA AGGIUNTA
     document.getElementById('searchResults').style.display = 'none'; document.getElementById('searchOverlay').style.display = 'flex';
 }
-    function populateItemGrid(items) {
+    function populateItemGrid_old(items) {
         const grid = document.getElementById('itemGrid'); const searchInput = document.getElementById('searchInput');
         const renderItems = (filteredItems) => {
             grid.innerHTML = '';
@@ -966,6 +966,32 @@ function openGlobalSearch() {
         };
         renderItems(items); searchInput.oninput = () => renderItems(items.filter(item => item.baseName.toLowerCase().includes(searchInput.value.toLowerCase())));
     }
+
+    function populateItemGrid(items) {
+    const grid = document.getElementById('itemGrid');
+    const searchInput = document.getElementById('searchInput');
+    grid.innerHTML = ''; // Pulisci la griglia
+
+    const renderItems = (filteredItems) => {
+        grid.innerHTML = '';
+        filteredItems.forEach(item => {
+            // Usiamo un div contenitore per la selezione
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'col-4 col-md-3 mb-2 d-flex justify-content-center';
+            // Aggiungiamo un attributo 'data-basename' per identificare l'oggetto
+            itemDiv.innerHTML = `
+                <div class="item-card text-center" data-basename="${item.baseName}" style="cursor: pointer;">
+                    <img src="./src/${item.baseName}.png" alt="${item.baseName}" class="item-image" style="width: 60px; height: 60px;">
+                    <div class="small mt-1 text-white" style="font-size: 0.75rem;">${item.baseName}</div>
+                </div>
+            `;
+            grid.appendChild(itemDiv);
+        });
+    };
+    renderItems(items);
+    searchInput.oninput = () => renderItems(items.filter(item => item.baseName.toLowerCase().includes(searchInput.value.toLowerCase())));
+}
+
 function closeSearchModal() {
     document.getElementById('searchOverlay').style.display = 'none';
     currentSearchMode = null;
@@ -1321,7 +1347,7 @@ async function performSmartSearch(cardId) {
      * Opens the item selection modal for the Smart Find feature.
      * @param {string} cardId - The ID of the card ('adventure_Zeus' or 'adventure_Pirate').
      */
-    function openSmartFindModal(cardId) {
+    function openSmartFindModal_old(cardId) {
         currentSearchMode = 'smart';
         currentSearchCard = cardId;
         const [chestType, eventType] = cardId.split('_');
@@ -1333,6 +1359,55 @@ async function performSmartSearch(cardId) {
         document.getElementById('itemGrid').style.display = 'flex'; // Ensure grid is visible
         document.getElementById('searchOverlay').style.display = 'flex';
     }
+    function openSmartFindModal(cardId) {
+    currentSearchMode = 'smart';
+    currentSearchCard = cardId;
+    selectedItemsForSearch = []; // Resetta la selezione
+
+    const [chestType, eventType] = cardId.split('_');
+    const availableItems = getAvailableItemsForChest(chestType, eventType);
+    
+    document.getElementById('searchModalTitle').textContent = `Smart Find in ${eventType} Chest`;
+    populateItemGrid(availableItems);
+
+    // Gestisci la visibilità degli elementi nella modale
+    document.getElementById('searchResults').style.display = 'none';
+    document.getElementById('itemGrid').style.display = 'flex';
+    document.getElementById('searchInput').style.display = 'block';
+    document.getElementById('smartFindActions').style.display = 'block'; // Mostra il nuovo pulsante
+    
+    document.getElementById('searchOverlay').style.display = 'flex';
+
+    // Aggiungi un event listener delegato per la selezione degli oggetti
+    const grid = document.getElementById('itemGrid');
+    const newGrid = grid.cloneNode(true); // Rimuovi vecchi listener
+    grid.parentNode.replaceChild(newGrid, grid);
+
+    newGrid.addEventListener('click', (event) => {
+        const itemCard = event.target.closest('.item-card');
+        if (!itemCard) return;
+
+        const baseName = itemCard.dataset.basename;
+        const index = selectedItemsForSearch.indexOf(baseName);
+
+        if (index > -1) {
+            // Deseleziona
+            selectedItemsForSearch.splice(index, 1);
+            itemCard.classList.remove('selected');
+        } else {
+            // Seleziona
+            selectedItemsForSearch.push(baseName);
+            itemCard.classList.add('selected');
+        }
+    });
+
+    // Aggiungi l'event listener al pulsante di avvio
+    const startBtn = document.getElementById('startSmartFindBtn');
+    const newStartBtn = startBtn.cloneNode(true);
+    startBtn.parentNode.replaceChild(newStartBtn, startBtn);
+    newStartBtn.addEventListener('click', () => performSmartSearch(currentSearchCard));
+}
+
     // START: Calculators Logic
     function calculatePetFood() {
         const targetAmount = parseInt(document.getElementById('petFoodAmount').value, 10);
