@@ -1160,7 +1160,7 @@ async function performSmartSearch_old(targetItem, cardId) {
 
         let html = '';
         const areSame = JSON.stringify(shortestSolution.path) === JSON.stringify(cheapestSolution.path);
-         if (!areSame) {
+         if (areSame) {
         html += `<div class="alert alert-success">
                     <h5><i class="fas fa-shoe-prints me-2"></i>Shortest Path</h5>
                     Found in <strong>${shortestSolution.path.length}</strong> openings.
