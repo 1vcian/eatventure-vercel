@@ -678,6 +678,161 @@ document.getElementById('tool-container').addEventListener('click', (event) => {
     }
 
     // Search Functions
+/**
+ * Recursively searches for the combination of openings that maximizes XP.
+ * @param {object} options - The search parameters.
+ * @returns {object} The best solution found { path: array, xp: number }.
+ */
+function findOptimalXpPath({ startSeed, eventType, cardId, maxLevel, vaultPercentage, initialOpenings }) {
+    let bestSolution = { path: [], xp: -1 };
+    //const initialOpenings = 4; // Start with 4 free openings
+
+    function search(currentSeed, currentPath, currentXp, openingsLeft) {
+        // Base case: If we have no more openings, this path is complete.
+        if (openingsLeft <= 0) {
+            if (currentXp > bestSolution.xp) {
+                bestSolution = { path: currentPath, xp: currentXp };
+            }
+            return;
+        }
+
+        // Recursive step: Try opening a chest at each possible level.
+        for (let level = 1; level <= maxLevel; level++) {
+            const result = simulateAdventureChestOpening(currentSeed, level, eventType, vaultPercentage, cardId);
+            
+            let openingXp = 0;
+            result.items.forEach(item => {
+                openingXp += getItemXp(item);
+            });
+
+            // Check if a key was found, which grants an extra opening.
+            const keysFound = result.items.filter(item => item.baseName.endsWith('KeyIcon')).length;
+            const newOpeningsLeft = openingsLeft - 1 + keysFound;
+
+            const newPath = [...currentPath, { level: level, items: result.items, xp: openingXp }];
+            
+            // Continue the search down this new path.
+            search(result.nextSeed, newPath, currentXp + openingXp, newOpeningsLeft);
+        }
+    }
+
+    // Start the recursive search.
+    search(startSeed, [], 0, initialOpenings);
+    return bestSolution;
+}
+
+/**
+ * Formats the optimal XP path into a user-friendly HTML string.
+ * @param {object} solution - The solution object from findOptimalXpPath.
+ * @returns {string} A formatted HTML string describing the steps and results.
+ */
+function formatXpPath(solution) {
+    if (!solution || solution.xp < 0) {
+        return `<div class="alert alert-warning">Could not calculate a path. Please ensure your level is set.</div>`;
+    }
+
+    let html = `<div class="alert alert-success">
+                    <h4><i class="fas fa-trophy me-2 text-warning"></i>Optimal XP Path Found!</h4>
+                    <p class="lead">Total Maximum XP: <strong>${solution.xp.toFixed(2)}</strong></p>
+                    <hr>
+                </div>`;
+
+    solution.path.forEach((step, index) => {
+        const itemsHtml = step.items.map(item => `<div class="col-4">${formatItemDisplay(item)}</div>`).join('');
+        const keyFound = step.items.some(item => item.baseName.endsWith('KeyIcon'));
+
+        html += `
+            <div class="loot-entry p-3 mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0 text-white">Step ${index + 1}: Open Level ${step.level}</h6>
+                    <span class="badge bg-warning text-dark">+${step.xp.toFixed(2)} XP</span>
+                </div>
+                <div class="row g-2 justify-content-center">${itemsHtml}</div>
+                ${keyFound ? '<p class="text-center mt-2 text-info small"><i class="fas fa-key me-1"></i>Vault Key found! You get an extra free opening.</p>' : ''}
+            </div>
+        `;
+    });
+
+    return html;
+}
+
+
+async function performSmartXpSearch(cardId) {
+    const spinner = document.getElementById('searchSpinner');
+    const resultsContent = document.getElementById('searchResultsContent');
+    const resultsContainer = document.getElementById('searchResults');
+
+    // Nascondi le opzioni e mostra lo spinner
+    document.getElementById('smartXpOptions').style.display = 'none';
+    resultsContent.innerHTML = '';
+    spinner.style.display = 'block';
+    resultsContainer.style.display = 'block';
+
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    const state = cardStates[cardId];
+    if (!state || state.initialSeed === null) { /* ... (gestione errore) */ return; }
+
+    const card = document.querySelector(`.card[data-card-id="${cardId}"]`);
+    const userLevel = parseInt(card.querySelector('.level-input')?.value, 10);
+    const vaultPercentage = parseInt(card.querySelector('.vault-percentage-input')?.value, 10) || 0;
+
+    if (isNaN(userLevel) || userLevel < 1 || userLevel > 100) { /* ... (gestione errore) */ return; }
+
+    // --- LOGICA MODIFICATA ---
+    // Leggi il numero di aperture dall'input, con 4 come fallback
+    const openings = parseInt(document.getElementById('smartXpOpenings').value, 10) || 4;
+    
+    const [_, eventType] = cardId.split('_');
+    let startSeed = state.initialSeed;
+    state.history.forEach(action => {
+        startSeed = simulateAdventureChestOpening(startSeed, action.level, action.eventType, action.vaultPercentage, action.type).nextSeed;
+    });
+
+    // Passa il valore "openings" alla funzione di ricerca
+    const bestPath = findOptimalXpPath({
+        startSeed,
+        eventType,
+        cardId,
+        maxLevel: userLevel,
+        vaultPercentage,
+        initialOpenings: openings
+    });
+
+    resultsContent.innerHTML = formatXpPath(bestPath);
+    spinner.style.display = 'none';
+}
+
+// In app.js, aggiungi questa nuova funzione
+
+function openSmartXpModal(cardId) {
+    // Memorizza il cardId per quando il pulsante di avvio verrà premuto
+    currentSearchCard = cardId; 
+    
+    // Configura la modale per la ricerca "Smart XP"
+    document.getElementById('searchModalTitle').textContent = 'Smart XP Optimizer';
+    document.getElementById('smartXpOptions').style.display = 'block';
+    document.getElementById('smartXpOpenings').value = '4'; // Resetta al valore di default
+    
+    // Nascondi gli altri elementi non necessari
+    document.getElementById('itemSearchGroup').style.display = 'none';
+    document.getElementById('itemGrid').style.display = 'none';
+    document.getElementById('searchResults').style.display = 'none';
+
+    // Mostra la finestra modale
+    document.getElementById('searchOverlay').style.display = 'flex';
+
+    const startBtn = document.getElementById('startSmartXpSearchBtn');
+    
+    // Sostituisci il bottone con un suo clone per rimuovere vecchi event listener
+    const newStartBtn = startBtn.cloneNode(true);
+    startBtn.parentNode.replaceChild(newStartBtn, startBtn);
+
+    // Aggiungi un event listener che si attiverà una sola volta
+    newStartBtn.addEventListener('click', () => {
+        performSmartXpSearch(currentSearchCard);
+    }, { once: true });
+}
     function getAvailableItemsForChest(chestType, eventType = null) {
         const availableItems = new Set();
         const addItemsFromPool = (poolName, rarity, type) => {
@@ -808,9 +963,17 @@ function openGlobalSearch() {
         };
         renderItems(items); searchInput.oninput = () => renderItems(items.filter(item => item.baseName.toLowerCase().includes(searchInput.value.toLowerCase())));
     }
-    function closeSearchModal() {
-        document.getElementById('searchOverlay').style.display = 'none'; currentSearchMode = null; currentSearchCard = null; document.getElementById('searchInput').value = '';
-    }
+function closeSearchModal() {
+    document.getElementById('searchOverlay').style.display = 'none';
+    currentSearchMode = null;
+    currentSearchCard = null;
+    document.getElementById('searchInput').value = '';
+    
+    // Aggiungi queste righe per resettare la UI della modale
+    document.getElementById('smartXpOptions').style.display = 'none';
+    document.getElementById('itemSearchGroup').style.display = 'block';
+    document.getElementById('itemGrid').style.display = 'flex';
+}
 
         /**
      * Formats the sequence of levels into a user-friendly, readable string.
@@ -1322,11 +1485,15 @@ async function performSmartSearch(targetItem, cardId) {
                 if(vaultPercentage>35) { toastr["error"]("Please enter a valid vault percentage (0-35) for the search.", "Error"); return; }
             }
             state.history.push({ type: chestType, eventType, rarity, level, vaultPercentage }); saveState(); renderCard(cardId);
-        }
+           }
          if (action === 'smart-find') {
         openSmartFindModal(cardId);
         return;
-    }
+          }
+       if (action === 'smart-xp') {
+            openSmartXpModal(cardId);
+            return;
+        }
     });
 
     const clickImages = ["./src/PerfectParticle.png", "./src/DoubleParticleEN.png", "./src/DivineParticleEN.png", "./src/GreedyParticleEn.png", "./src/GoldenParticleEn.png", "./src/AnotherParticleEN.png"];

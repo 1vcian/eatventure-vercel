@@ -606,7 +606,7 @@
                     <li class="list-group-item">5. Copy the <strong>seed</strong> number for each <code>ChestId</code> and <code>EggRarity</code> and paste it into the corresponding field on this page.</li>
                     <li class="list-group-item">6. Once you've entered your seeds, you'll be able to simulate opening your chests and see what items you'll get!</li>
                 </ol>
-                <iframe width="560" height="315" style="margin: 0 auto;" src="https://www.youtube.com/embed/lLgFsEIWvF8?si=fOrWj6zMi71ATtTM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                <iframe width="560" height="315" style="margin: 0 auto"; display="block" src="https://www.youtube.com/embed/lLgFsEIWvF8?si=fOrWj6zMi71ATtTM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
             </div>
         </div>
 
@@ -826,7 +826,7 @@
                             <button class="btn btn-danger" data-action="clear"><i class="fas fa-trash me-1"></i>Clear</button>
                             <button class="btn btn-info toggle-btn" data-action="toggle-history" style="display: none;"><i class="fas fa-history me-1"></i>Toggle History</button>
                             <button class="btn btn-secondary" data-action="xp-calculator"><i class="fas fa-star me-1"></i>Calc. XP</button>
-                            
+                            <button class="btn btn-info" data-action="smart-xp"><i class="fas fa-tachometer-alt me-1"></i>Smart XP</button>
                             <button class="btn btn-warning" data-action="local-search"><i class="fas fa-search me-1"></i>Find Item</button>
                            <button class="btn btn-danger" data-action="toggle-what-if"><i class="fas fa-question-circle me-1"></i>What If</button>
                            <button class="btn btn-success" data-action="smart-find" style="
@@ -880,7 +880,7 @@
                             <button class="btn btn-danger" data-action="clear"><i class="fas fa-trash me-1"></i>Clear</button>
                             <button class="btn btn-info toggle-btn" data-action="toggle-history" style="display: none;"><i class="fas fa-history me-1"></i>Toggle History</button>
                             <button class="btn btn-secondary" data-action="xp-calculator"><i class="fas fa-star me-1"></i>Calc. XP</button>
-                        
+                            <button class="btn btn-info" data-action="smart-xp"><i class="fas fa-tachometer-alt me-1"></i>Smart XP</button>
                             <button class="btn btn-warning" data-action="local-search"><i class="fas fa-search me-1"></i>Find Item</button>
                             <button class="btn btn-danger" data-action="toggle-what-if"><i class="fas fa-question-circle me-1"></i>What If</button>   
                              <button class="btn btn-success" data-action="smart-find"
@@ -1182,14 +1182,22 @@
 
     <div class="search-overlay" id="searchOverlay">
         <div class="search-modal">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h4 id="searchModalTitle">Search for Item</h4>
-                <button class="btn-close btn-close-white" onclick="closeSearchModal()"></button>
-            </div>
-            <div class="mb-3">
-                <input type="text" class="form-control" id="searchInput" placeholder="Type to search items...">
-            </div>
-            <div class="row" id="itemGrid" style="max-height: 300px; overflow-y: auto;"></div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 id="searchModalTitle">Search for Item</h4>
+        <button class="btn-close btn-close-white" onclick="closeSearchModal()"></button>
+    </div>
+
+    <div id="smartXpOptions" class="mb-3" style="display: none;">
+        <label for="smartXpOpenings" class="form-label">Numero di aperture gratuite:</label>
+        <input type="number" id="smartXpOpenings" class="form-control" value="4" min="1">
+        <button id="startSmartXpSearchBtn" class="btn btn-primary w-100 mt-3">
+            <i class="fas fa-calculator me-1"></i> Trova XP Massima
+        </button>
+    </div>
+    <div class="mb-3" id="itemSearchGroup">
+        <input type="text" class="form-control" id="searchInput" placeholder="Type to search items...">
+    </div>
+    <div class="row" id="itemGrid" style="max-height: 300px; overflow-y: auto;"></div>
             <div id="searchResults" class="mt-3" style="display: none;">
                 <div id="searchSpinner" class="text-center" style="display: none;">
                     <div class="spinner-border text-primary" role="status">
