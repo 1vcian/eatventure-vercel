@@ -1020,7 +1020,7 @@ function closeSearchModal() {
 // In app.js, sostituisci la funzione findAllPaths con questa versione aggiornata
 
 function findAllPaths(startSeed, targetItems, eventType, cardId, maxLevel, vaultPercentage) {
-    const MAX_DEPTH = 15;
+    const MAX_DEPTH = 10;
     const solutions = [];
     const targetSet = new Set(targetItems);
 
