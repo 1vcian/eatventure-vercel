@@ -1157,15 +1157,28 @@ async function performSmartSearch(targetItems, cardId) {
     await new Promise(resolve => setTimeout(resolve, 50));
 
     const state = cardStates[cardId];
-    if (!state || state.initialSeed === null) { /* ... error handling ... */ return; }
-
+    if (!state || state.initialSeed === null) {
+        spinner.style.display = 'none';
+        resultsContent.innerHTML = `<div class="alert alert-danger">Please set an initial seed before searching.</div>`;
+        toastr.error("Please set an initial seed first.");
+        return;
+    }
     const card = document.querySelector(`.card[data-card-id="${cardId}"]`);
     const userLevel = parseInt(card.querySelector('.level-input')?.value, 10);
     const vaultPercentage = parseInt(card.querySelector('.vault-percentage-input')?.value, 10) || 0;
 
-    if (isNaN(userLevel) || userLevel < 1 || userLevel > 100) { /* ... error handling ... */ return; }
-    if (isNaN(vaultPercentage) || vaultPercentage < 0 || vaultPercentage > 100) { /* ... error handling ... */ return; }
-
+    if (isNaN(userLevel) || userLevel < 1 || userLevel > 100) {
+        spinner.style.display = 'none';
+        resultsContent.innerHTML = `<div class="alert alert-danger">A valid level (1-100) is required for Smart Find function.</div>`;
+        toastr.error("Please enter a valid level (1-100).");
+        return;
+    }
+    if (isNaN(vaultPercentage) || vaultPercentage < 0 || vaultPercentage > 100) {
+        spinner.style.display = 'none';
+        resultsContent.innerHTML = `<div class="alert alert-danger">A valid vault percentage (0-100) is required.</div>`;
+        toastr.error("Please enter a valid vault percentage.");
+        return;
+    }
     const [_, eventType] = cardId.split('_');
     let startSeed = state.initialSeed;
     state.history.forEach(action => {
