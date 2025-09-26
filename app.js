@@ -776,14 +776,23 @@ async function performSmartXpSearch(cardId) {
     await new Promise(resolve => setTimeout(resolve, 50));
 
     const state = cardStates[cardId];
-    if (!state || state.initialSeed === null) { /* ... (gestione errore) */ return; }
+    if (!state || state.initialSeed === null) {
+        spinner.style.display = 'none';
+        resultsContent.innerHTML = `<div class="alert alert-danger">Please set an initial seed for this chest.</div>`;
+        toastr.error("Please set an initial seed for this chest.");
+        return;
+    }
 
     const card = document.querySelector(`.card[data-card-id="${cardId}"]`);
     const userLevel = parseInt(card.querySelector('.level-input')?.value, 10);
     const vaultPercentage = parseInt(card.querySelector('.vault-percentage-input')?.value, 10) || 0;
 
-    if (isNaN(userLevel) || userLevel < 1 || userLevel > 100) { /* ... (gestione errore) */ return; }
-
+    if (isNaN(userLevel) || userLevel < 1 || userLevel > 100) {
+        spinner.style.display = 'none';
+        resultsContent.innerHTML = `<div class="alert alert-danger">Please enter a valid level (1-100) to start the search.</div>`;
+        toastr.error("Please enter a valid level (1-100).");
+        return;
+    }
     // --- LOGICA MODIFICATA ---
     // Leggi il numero di aperture dall'input, con 4 come fallback
     const openings = parseInt(document.getElementById('smartXpOpenings').value, 10) || 4;
