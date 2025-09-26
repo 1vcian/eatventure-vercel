@@ -681,31 +681,31 @@ document.getElementById('tool-container').addEventListener('click', (event) => {
 
     // Search Functions
 
-    function findOptimalXpPath({ startSeed, eventType, cardId, maxLevel, vaultPercentage, initialOpenings }) {
+ async function findOptimalXpPath({ startSeed, eventType, cardId, maxLevel, vaultPercentage, initialOpenings, updateCallback, shouldStopCallback }) {
     let bestSolution = { path: [], xp: -1 };
+    let stopSearch = false;
 
-    function search(currentSeed, currentPath, currentXp, openingsLeft) {
-        // La base case: se non ci sono più aperture, il percorso è completo.
-        if (openingsLeft <= 0) {
+    async function search(currentSeed, currentPath, currentXp, openingsLeft) {
+        if (await shouldStopCallback() || openingsLeft <= 0) {
             if (currentXp > bestSolution.xp) {
                 bestSolution = { path: currentPath, xp: currentXp };
             }
             return;
         }
 
-        // Filtra i livelli dominanti per considerare solo quelli raggiungibili dall'utente
+        if (currentPath.length > (bestSolution.path.length || 0)) {
+            await updateCallback(currentPath.length);
+        }
+
         const relevantDominantLevels = DOMINANT_ADVENTURE_LEVELS.filter(level => level <= maxLevel);
-        
-        // Se il livello massimo dell'utente è un livello intermedio (es. 42),
-        // ci assicuriamo di includerlo nella ricerca.
         if (!relevantDominantLevels.includes(maxLevel)) {
             relevantDominantLevels.push(maxLevel);
         }
 
-        // Itera solo sui livelli ottimali invece di tutti i livelli
         for (const level of relevantDominantLevels) {
+            if (await shouldStopCallback()) break;
+
             const result = simulateAdventureChestOpening(currentSeed, level, eventType, vaultPercentage, cardId);
-            
             let openingXp = 0;
             result.items.forEach(item => {
                 openingXp += getItemXp(item);
@@ -713,16 +713,13 @@ document.getElementById('tool-container').addEventListener('click', (event) => {
 
             const keysFound = result.items.filter(item => item.baseName.endsWith('KeyIcon')).length;
             const newOpeningsLeft = openingsLeft - 1 + keysFound;
-
             const newPath = [...currentPath, { level: level, items: result.items, xp: openingXp }];
-            
-            // Continua la ricerca lungo questo nuovo percorso
-            search(result.nextSeed, newPath, currentXp + openingXp, newOpeningsLeft);
+
+            await search(result.nextSeed, newPath, currentXp + openingXp, newOpeningsLeft);
         }
     }
 
-    // Avvia la ricerca ricorsiva
-    search(startSeed, [], 0, initialOpenings);
+    await search(startSeed, [], 0, initialOpenings);
     return bestSolution;
 }
 
@@ -766,18 +763,35 @@ async function performSmartXpSearch(cardId) {
     const spinner = document.getElementById('searchSpinner');
     const resultsContent = document.getElementById('searchResultsContent');
     const resultsContainer = document.getElementById('searchResults');
+    const progressContainer = document.getElementById('search-progress-container');
+    const stopBtn = document.getElementById('stop-search-btn');
+    const livePathLength = document.getElementById('live-path-length');
 
-    // Nascondi le opzioni e mostra lo spinner
     document.getElementById('smartXpOptions').style.display = 'none';
     resultsContent.innerHTML = '';
     spinner.style.display = 'block';
     resultsContainer.style.display = 'block';
+    progressContainer.style.display = 'block';
+    livePathLength.textContent = '0';
+
+    let stopSearchFlag = false;
+    const stopSearchHandler = () => {
+        stopSearchFlag = true;
+        toastr.info('Search will stop after the current check...');
+        stopBtn.disabled = true;
+        stopBtn.textContent = 'Stopping...';
+    };
+
+    stopBtn.onclick = stopSearchHandler;
+    stopBtn.disabled = false;
+    stopBtn.textContent = 'Stop Search';
 
     await new Promise(resolve => setTimeout(resolve, 50));
 
     const state = cardStates[cardId];
     if (!state || state.initialSeed === null) {
         spinner.style.display = 'none';
+        progressContainer.style.display = 'none';
         resultsContent.innerHTML = `<div class="alert alert-danger">Please set an initial seed for this chest.</div>`;
         toastr.error("Please set an initial seed for this chest.");
         return;
@@ -789,12 +803,11 @@ async function performSmartXpSearch(cardId) {
 
     if (isNaN(userLevel) || userLevel < 1 || userLevel > 100) {
         spinner.style.display = 'none';
+        progressContainer.style.display = 'none';
         resultsContent.innerHTML = `<div class="alert alert-danger">Please enter a valid level (1-100) to start the search.</div>`;
         toastr.error("Please enter a valid level (1-100).");
         return;
     }
-    // --- LOGICA MODIFICATA ---
-    // Leggi il numero di aperture dall'input, con 4 come fallback
     const openings = parseInt(document.getElementById('smartXpOpenings').value, 10) || 4;
     
     const [_, eventType] = cardId.split('_');
@@ -803,18 +816,29 @@ async function performSmartXpSearch(cardId) {
         startSeed = simulateAdventureChestOpening(startSeed, action.level, action.eventType, action.vaultPercentage, action.type).nextSeed;
     });
 
-    // Passa il valore "openings" alla funzione di ricerca
-    const bestPath = findOptimalXpPath({
+    const updateCallback = async (pathLength) => {
+        livePathLength.textContent = pathLength;
+        await new Promise(resolve => requestAnimationFrame(resolve));
+    };
+
+    const shouldStopCallback = async () => {
+        return stopSearchFlag;
+    };
+
+    const bestPath = await findOptimalXpPath({
         startSeed,
         eventType,
         cardId,
         maxLevel: userLevel,
         vaultPercentage,
-        initialOpenings: openings
+        initialOpenings: openings,
+        updateCallback,
+        shouldStopCallback
     });
 
     resultsContent.innerHTML = formatXpPath(bestPath);
     spinner.style.display = 'none';
+    progressContainer.style.display = 'none';
 }
 
 // In app.js, aggiungi questa nuova funzione
