@@ -767,6 +767,7 @@ async function performSmartXpSearch(cardId) {
     const stopBtn = document.getElementById('stop-search-btn');
     const livePathLength = document.getElementById('live-path-length');
 
+    // Nascondi le opzioni e mostra lo spinner/progress
     document.getElementById('smartXpOptions').style.display = 'none';
     resultsContent.innerHTML = '';
     spinner.style.display = 'block';
@@ -777,9 +778,9 @@ async function performSmartXpSearch(cardId) {
     let stopSearchFlag = false;
     const stopSearchHandler = () => {
         stopSearchFlag = true;
-        toastr.info('Search will stop after the current check...');
+        toastr.info('La ricerca si fermerà al più presto...');
         stopBtn.disabled = true;
-        stopBtn.textContent = 'Stopping...';
+        stopBtn.textContent = 'Fermando...';
     };
 
     stopBtn.onclick = stopSearchHandler;
@@ -788,12 +789,13 @@ async function performSmartXpSearch(cardId) {
 
     await new Promise(resolve => setTimeout(resolve, 50));
 
+    // Valida lo stato iniziale
     const state = cardStates[cardId];
     if (!state || state.initialSeed === null) {
         spinner.style.display = 'none';
         progressContainer.style.display = 'none';
-        resultsContent.innerHTML = `<div class="alert alert-danger">Please set an initial seed for this chest.</div>`;
-        toastr.error("Please set an initial seed for this chest.");
+        resultsContent.innerHTML = `<div class="alert alert-danger">Per favore, imposta un seed iniziale per questo forziere.</div>`;
+        toastr.error("Per favore, imposta un seed iniziale per questo forziere.");
         return;
     }
 
@@ -804,8 +806,8 @@ async function performSmartXpSearch(cardId) {
     if (isNaN(userLevel) || userLevel < 1 || userLevel > 100) {
         spinner.style.display = 'none';
         progressContainer.style.display = 'none';
-        resultsContent.innerHTML = `<div class="alert alert-danger">Please enter a valid level (1-100) to start the search.</div>`;
-        toastr.error("Please enter a valid level (1-100).");
+        resultsContent.innerHTML = `<div class="alert alert-danger">Per favore, inserisci un livello valido (1-100) per avviare la ricerca.</div>`;
+        toastr.error("Per favore, inserisci un livello valido (1-100).");
         return;
     }
     const openings = parseInt(document.getElementById('smartXpOpenings').value, 10) || 4;
@@ -816,15 +818,21 @@ async function performSmartXpSearch(cardId) {
         startSeed = simulateAdventureChestOpening(startSeed, action.level, action.eventType, action.vaultPercentage, action.type).nextSeed;
     });
 
+    // NUOVA LOGICA PER IL CONTATORE
+    let maxPathLengthSoFar = 0;
     const updateCallback = async (pathLength) => {
-        livePathLength.textContent = pathLength;
-        await new Promise(resolve => requestAnimationFrame(resolve));
+        if (pathLength > maxPathLengthSoFar) {
+            maxPathLengthSoFar = pathLength;
+            livePathLength.textContent = maxPathLengthSoFar;
+            await new Promise(resolve => requestAnimationFrame(resolve));
+        }
     };
 
     const shouldStopCallback = async () => {
         return stopSearchFlag;
     };
 
+    // La chiamata a findOptimalXpPath rimane invariata
     const bestPath = await findOptimalXpPath({
         startSeed,
         eventType,
@@ -836,6 +844,7 @@ async function performSmartXpSearch(cardId) {
         shouldStopCallback
     });
 
+    // Pulisci l'interfaccia dopo la ricerca
     resultsContent.innerHTML = formatXpPath(bestPath);
     spinner.style.display = 'none';
     progressContainer.style.display = 'none';
