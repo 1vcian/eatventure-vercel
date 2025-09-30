@@ -245,7 +245,8 @@ document.getElementById('tool-container').addEventListener('click', (event) => {
     // State Management Key
     const STATE_KEY = 'lootSimulatorState_v14_globalEggs'; 
     let currentSearchMode = null, currentSearchCard = null, currentCalcCardId = null; 
-    
+    let optimalXpPathSolution = null;
+    let currentXpPathStep = 0;
     // Note: The original 'saveState' and 'loadState' that used localStorage have been removed
     function saveState() { 
     const stateToSave = {
@@ -713,7 +714,7 @@ document.getElementById('tool-container').addEventListener('click', (event) => {
 
             const keysFound = result.items.filter(item => item.baseName.endsWith('KeyIcon')).length;
             const newOpeningsLeft = openingsLeft - 1 + keysFound;
-            const newPath = [...currentPath, { level: level, items: result.items, xp: openingXp }];
+            const newPath = [...currentPath, { level: level, items: result.items, xp: openingXp, usedSeed: currentSeed }];
 
             await search(result.nextSeed, newPath, currentXp + openingXp, newOpeningsLeft);
         }
@@ -724,39 +725,81 @@ document.getElementById('tool-container').addEventListener('click', (event) => {
 }
 
 /**
- * Formats the optimal XP path into a user-friendly HTML string.
- * @param {object} solution - The solution object from findOptimalXpPath.
- * @returns {string} A formatted HTML string describing the steps and results.
+ * Renders the currently active step of the optimal XP path.
  */
-function formatXpPath(solution) {
+function renderCurrentXpStep() {
+    if (!optimalXpPathSolution) return;
+
+    const step = optimalXpPathSolution.path[currentXpPathStep];
+    const totalSteps = optimalXpPathSolution.path.length;
+    const stepContent = document.getElementById('xp-step-content');
+
+    const itemsHtml = step.items.map(item => `<div class="col-4">${formatItemDisplay(item)}</div>`).join('');
+    const keyFound = step.items.some(item => item.baseName.endsWith('KeyIcon'));
+
+    stepContent.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0 text-white">Step ${currentXpPathStep + 1}: Open Level ${step.level}</h6>
+            <span class="badge bg-warning text-dark">+${step.xp.toFixed(2)} XP</span>
+        </div>
+        <div class="row g-2 justify-content-center mt-3">${itemsHtml}</div>
+        <hr class="my-2">
+        <div class="text-center">
+            <small class="text-light">Seed Used: ${step.usedSeed}</small>
+            ${keyFound ? '<p class="text-center mt-2 text-info small"><i class="fas fa-key me-1"></i>Vault Key found! You get an extra free opening.</p>' : ''}
+        </div>
+    `;
+
+    // Update counter and button states
+    document.getElementById('xp-step-counter').textContent = `Step ${currentXpPathStep + 1} of ${totalSteps}`;
+    document.getElementById('xp-prev-step-btn').disabled = currentXpPathStep === 0;
+    document.getElementById('xp-next-step-btn').disabled = currentXpPathStep >= totalSteps - 1;
+}
+
+/**
+ * Initializes and displays the step-by-step view for the optimal XP path.
+ * @param {object} solution - The solution object from findOptimalXpPath.
+ */
+function displayXpPathStepByStep(solution) {
+    const resultsContent = document.getElementById('searchResultsContent');
+    const stepContainer = document.getElementById('xp-step-by-step-container');
+
     if (!solution || solution.xp < 0) {
-        return `<div class="alert alert-warning">Could not calculate a path. Please ensure your level is set.</div>`;
+        resultsContent.innerHTML = `<div class="alert alert-warning">Could not calculate a path. Please ensure your level is set.</div>`;
+        stepContainer.style.display = 'none';
+        return;
     }
 
-    let html = `<div class="alert alert-success">
-                    <h4><i class="fas fa-trophy me-2 text-warning"></i>Optimal XP Path Found!</h4>
-                    <p class="lead">Total Maximum XP: <strong>${solution.xp.toFixed(2)}</strong></p>
-                    <hr>
-                </div>`;
+    // Store solution globally and reset step
+    optimalXpPathSolution = solution;
+    currentXpPathStep = 0;
+    
+    // Hide standard results and show step-by-step container
+    resultsContent.style.display = 'none';
+    stepContainer.style.display = 'block';
 
-    solution.path.forEach((step, index) => {
-        const itemsHtml = step.items.map(item => `<div class="col-4">${formatItemDisplay(item)}</div>`).join('');
-        const keyFound = step.items.some(item => item.baseName.endsWith('KeyIcon'));
+    // Update summary
+    document.getElementById('total-xp-summary').textContent = solution.xp.toFixed(2);
+    document.getElementById('total-steps-summary').textContent = solution.path.length;
 
-        html += `
-            <div class="loot-entry p-3 mb-3">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="mb-0 text-white">Step ${index + 1}: Open Level ${step.level}</h6>
-                    <span class="badge bg-warning text-dark">+${step.xp.toFixed(2)} XP</span>
-                </div>
-                <div class="row g-2 justify-content-center">${itemsHtml}</div>
-                ${keyFound ? '<p class="text-center mt-2 text-info small"><i class="fas fa-key me-1"></i>Vault Key found! You get an extra free opening.</p>' : ''}
-            </div>
-        `;
-    });
-
-    return html;
+    // Render the first step
+    renderCurrentXpStep();
 }
+
+// Add event listeners for the new navigation buttons
+document.getElementById('xp-prev-step-btn').addEventListener('click', () => {
+    if (currentXpPathStep > 0) {
+        currentXpPathStep--;
+        renderCurrentXpStep();
+    }
+});
+
+document.getElementById('xp-next-step-btn').addEventListener('click', () => {
+    if (optimalXpPathSolution && currentXpPathStep < optimalXpPathSolution.path.length - 1) {
+        currentXpPathStep++;
+        renderCurrentXpStep();
+    }
+});
 
 
 async function performSmartXpSearch(cardId) {
@@ -766,10 +809,11 @@ async function performSmartXpSearch(cardId) {
     const progressContainer = document.getElementById('search-progress-container');
     const stopBtn = document.getElementById('stop-search-btn');
     const livePathLength = document.getElementById('live-path-length');
-
-    // Nascondi le opzioni e mostra lo spinner/progress
+    
+    // Hide options and show spinner/progress
     document.getElementById('smartXpOptions').style.display = 'none';
     resultsContent.innerHTML = '';
+    document.getElementById('xp-step-by-step-container').style.display = 'none'; // Hide step view
     spinner.style.display = 'block';
     resultsContainer.style.display = 'block';
     progressContainer.style.display = 'block';
@@ -778,9 +822,9 @@ async function performSmartXpSearch(cardId) {
     let stopSearchFlag = false;
     const stopSearchHandler = () => {
         stopSearchFlag = true;
-        toastr.info('La ricerca si fermerà al più presto...');
+        toastr.info('Search will stop soon...');
         stopBtn.disabled = true;
-        stopBtn.textContent = 'Fermando...';
+        stopBtn.textContent = 'Stopping...';
     };
 
     stopBtn.onclick = stopSearchHandler;
@@ -789,13 +833,14 @@ async function performSmartXpSearch(cardId) {
 
     await new Promise(resolve => setTimeout(resolve, 50));
 
-    // Valida lo stato iniziale
+    // Validate initial state
     const state = cardStates[cardId];
     if (!state || state.initialSeed === null) {
         spinner.style.display = 'none';
         progressContainer.style.display = 'none';
-        resultsContent.innerHTML = `<div class="alert alert-danger">Per favore, imposta un seed iniziale per questo forziere.</div>`;
-        toastr.error("Per favore, imposta un seed iniziale per questo forziere.");
+        resultsContent.innerHTML = `<div class="alert alert-danger">Please set an initial seed for this chest first.</div>`;
+        resultsContent.style.display = 'block';
+        toastr.error("Please set an initial seed for this chest.");
         return;
     }
 
@@ -806,8 +851,9 @@ async function performSmartXpSearch(cardId) {
     if (isNaN(userLevel) || userLevel < 1 || userLevel > 100) {
         spinner.style.display = 'none';
         progressContainer.style.display = 'none';
-        resultsContent.innerHTML = `<div class="alert alert-danger">Per favore, inserisci un livello valido (1-100) per avviare la ricerca.</div>`;
-        toastr.error("Per favore, inserisci un livello valido (1-100).");
+        resultsContent.innerHTML = `<div class="alert alert-danger">Please enter a valid level (1-100) to start the search.</div>`;
+        resultsContent.style.display = 'block';
+        toastr.error("Please enter a valid level (1-100).");
         return;
     }
     const openings = parseInt(document.getElementById('smartXpOpenings').value, 10) || 4;
@@ -818,7 +864,6 @@ async function performSmartXpSearch(cardId) {
         startSeed = simulateAdventureChestOpening(startSeed, action.level, action.eventType, action.vaultPercentage, action.type).nextSeed;
     });
 
-    // NUOVA LOGICA PER IL CONTATORE
     let maxPathLengthSoFar = 0;
     const updateCallback = async (pathLength) => {
         if (pathLength > maxPathLengthSoFar) {
@@ -832,7 +877,6 @@ async function performSmartXpSearch(cardId) {
         return stopSearchFlag;
     };
 
-    // La chiamata a findOptimalXpPath rimane invariata
     const bestPath = await findOptimalXpPath({
         startSeed,
         eventType,
@@ -844,10 +888,10 @@ async function performSmartXpSearch(cardId) {
         shouldStopCallback
     });
 
-    // Pulisci l'interfaccia dopo la ricerca
-    resultsContent.innerHTML = formatXpPath(bestPath);
+    // Clean up the interface and display results
     spinner.style.display = 'none';
     progressContainer.style.display = 'none';
+    displayXpPathStepByStep(bestPath); // Use the new step-by-step display function
 }
 
 // In app.js, aggiungi questa nuova funzione
@@ -1031,10 +1075,17 @@ function closeSearchModal() {
     currentSearchCard = null;
     document.getElementById('searchInput').value = '';
     
-    // Aggiungi queste righe per resettare la UI della modale
+    // Reset the modal UI to its default state
     document.getElementById('smartXpOptions').style.display = 'none';
     document.getElementById('itemSearchGroup').style.display = 'block';
     document.getElementById('itemGrid').style.display = 'flex';
+    document.getElementById('searchResultsContent').style.display = 'block'; // Show standard results div
+    document.getElementById('searchResultsContent').innerHTML = '';
+
+    // NEW: Reset and hide the XP step-by-step viewer
+    document.getElementById('xp-step-by-step-container').style.display = 'none';
+    optimalXpPathSolution = null;
+    currentXpPathStep = 0;
 }
 
         /**

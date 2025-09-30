@@ -1251,20 +1251,40 @@
         </button>
     </div>
 
-            <div id="searchResults" class="mt-3" style="display: none;">
-                <div id="searchSpinner" class="text-center" style="display: none;">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p>Searching for optimal path...<br>(This can take up to 60 seconds)</p>
-                </div>
-                <div id="search-progress-container" class="text-center mt-3" style="display: none;">
-                <p>Longest path found so far: <strong id="live-path-length">0</strong> openings</p>
-                <button id="stop-search-btn" class="btn btn-danger">Stop Search</button>
+          <div id="searchResults" class="mt-3" style="display: none;">
+    <div id="searchSpinner" class="text-center" style="display: none;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p>Searching for optimal path...<br>(This can take up to 60 seconds)</p>
+    </div>
+
+    <div id="search-progress-container" class="text-center mt-3" style="display: none;">
+        <p>Longest path found so far: <strong id="live-path-length">0</strong> openings</p>
+        <button id="stop-search-btn" class="btn btn-danger">Stop Search</button>
+    </div>
+
+    <div id="searchResultsContent"></div>
+
+    <div id="xp-step-by-step-container" style="display: none;">
+        <div class="alert alert-success">
+            <h4><i class="fas fa-trophy me-2 text-warning"></i>Optimal XP Path Found!</h4>
+            <div class="d-flex justify-content-between">
+                <span>Total Maximum XP: <strong id="total-xp-summary">0</strong></span>
+                <span>Total Steps: <strong id="total-steps-summary">0</strong></span>
             </div>
-                <h5>Search Results:</h5>
-                <div id="searchResultsContent"></div>
+        </div>
+
+        <div id="xp-step-content" class="loot-entry p-3 mb-3">
             </div>
+
+        <div id="xp-step-navigation" class="d-flex justify-content-between align-items-center">
+            <button id="xp-prev-step-btn" class="btn btn-secondary"><i class="fas fa-arrow-left me-1"></i> Previous</button>
+            <span id="xp-step-counter" class="text-white">Step 1 of 1</span>
+            <button id="xp-next-step-btn" class="btn btn-primary">Next <i class="fas fa-arrow-right ms-1"></i></button>
+        </div>
+    </div>
+</div>
       
 
 
