@@ -1,5 +1,9 @@
 # Eatventure Loot Predictor
 
+---
+[Try it now](https://eatventure-loot-predictor.vercel.app/)
+---
+
 This is a powerful loot prediction tool for the mobile game *Eatventure*. It allows you to see the *exact* contents of your future chests and eggs by using the same random number generator (RNG) as the game itself.
 
 Ever wondered when you'll finally get that Mythic item? Or how many chests you need to open for a specific Legendary pet? This tool tells you.
