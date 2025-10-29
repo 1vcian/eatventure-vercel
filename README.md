@@ -12,6 +12,14 @@ Ever wondered when you'll finally get that Mythic item? Or how many chests you n
 * 🧠 **Smart Find (The "Big Brain" Mode):** This is the killer feature. You can select one or *multiple* items you need (like that Mythic body and Mythic cleaver). The tool will then simulate thousands of paths—including opening chests at different Adventure levels and accounting for free key drops—to find the **shortest and most cost-effective path** to get all of them.
 * 🚀 **Smart XP (The "Power-Level" Mode):** This is the other game-changer. Tell the tool how many free Adventure chests you have and your max level. It will run a complex search to find the optimal opening sequence (e.g., "open 2 at Lvl 24, then 1 at Lvl 59...") that gives you the **absolute maximum XP possible**.
 
+
+https://github.com/user-attachments/assets/30a4819b-ba6f-4ffe-957e-54539fed2eb6
+
+
+https://github.com/user-attachments/assets/0d6c7fb6-801c-43b6-b265-00a6c3273b61
+
+
+
 ## 🕵️‍♂️ How It Works: A Black-Box Detective Story
 
 The game *Eatventure*, like many Unity games, doesn't use true randomness. It uses a predictable algorithm (a Linear Congruential Generator, or LCG) based on a starting "seed" value, which is stored right in your save file.
