@@ -1,5 +1,9 @@
 # Eatventure Loot Predictor
 
+---
+[Try it now](https://eatventure-loot-predictor.vercel.app/)
+---
+
 This is a powerful loot prediction tool for the mobile game *Eatventure*. It allows you to see the *exact* contents of your future chests and eggs by using the same random number generator (RNG) as the game itself.
 
 Ever wondered when you'll finally get that Mythic item? Or how many chests you need to open for a specific Legendary pet? This tool tells you.
@@ -11,6 +15,14 @@ Ever wondered when you'll finally get that Mythic item? Or how many chests you n
 * 💰 **Calculators:** Built-in tools to calculate how many Small Boxes you need for a target amount of Pet Food or how many chests for a target XP.
 * 🧠 **Smart Find (The "Big Brain" Mode):** This is the killer feature. You can select one or *multiple* items you need (like that Mythic body and Mythic cleaver). The tool will then simulate thousands of paths—including opening chests at different Adventure levels and accounting for free key drops—to find the **shortest and most cost-effective path** to get all of them.
 * 🚀 **Smart XP (The "Power-Level" Mode):** This is the other game-changer. Tell the tool how many free Adventure chests you have and your max level. It will run a complex search to find the optimal opening sequence (e.g., "open 2 at Lvl 24, then 1 at Lvl 59...") that gives you the **absolute maximum XP possible**.
+
+
+https://github.com/user-attachments/assets/30a4819b-ba6f-4ffe-957e-54539fed2eb6
+
+
+https://github.com/user-attachments/assets/0d6c7fb6-801c-43b6-b265-00a6c3273b61
+
+
 
 ## 🕵️‍♂️ How It Works: A Black-Box Detective Story
 
