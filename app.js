@@ -47,6 +47,7 @@ async function loadStateFromDB() {
 document.addEventListener('DOMContentLoaded', async () => {
     // Selettori per gli elementi da bloccare
   const requiresLoginSelectors = [
+    '.dummyClass'
     /*
         '.card[data-card-id="small"]',
         '.card[data-card-id="pet"]',
@@ -76,6 +77,7 @@ const removeLockStyles = () => {
 
 const applyLockStyles = () => {
     const requiresLoginSelectors = [
+          '.dummyClass'
       /*  '.card[data-card-id="small"]',
         '.card[data-card-id="pet"]',
         '.card[data-card-id="clan"]',
