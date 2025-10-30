@@ -74,7 +74,7 @@ const removeLockStyles = () => {
         }
     });
 };
-//hello
+//helloo
 const applyLockStyles = () => {
     const requiresLoginSelectors = [
           '.dummyClass'
